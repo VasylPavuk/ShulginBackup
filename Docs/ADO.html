@@ -1,0 +1,1963 @@
+<html><head>
+
+<meta http-equiv="Content-Language" content="ru">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<title>Библиотека ADO (Microsoft ActiveX Data Object)</title>
+<meta name="keywords" content="Использование, библиотека, ADO, Microsoft, ActiveX, Data, Object">
+<meta name="description" content="Использование библиотеки ADO (Microsoft ActiveX Data Object)">
+
+<style type="text/css"> 
+	.paragraph {text-align:justify; text-indent:2em; margin-top:0; margin-bottom:0}
+</style>
+
+</head><body bgcolor="#e0e0e0">
+
+<p><a href="http://www.script-coding.info/index.html">Перейти на главную страничку сайта (список статей, файлы для скачивания)</a></p>
+<p><a href="http://forum.script-coding.info/">ФОРУМ (здесь можно обсудить эту статью, а также любые
+проблемы программирования на различных макроязыках и в скриптовых средах)</a></p>
+
+<h1>Использование библиотеки ADO (Microsoft ActiveX Data Object)</h1>
+
+<h2 style="text-indent: 1.3em;">Понятие о библиотеке ADO</h2>
+
+<p class="paragraph">
+Библиотека ADO (Microsoft ActiveX Data Object) служит для доступа к базам данных различных типов и предоставляет
+объектный программный интерфейс к интерфейсу OLE DB, который предлагается компанией Microsoft как альтернатива
+интерфейсу ODBC. Объектная модель ADO реализована на базе технологии COM (Component Object Model).
+</p>
+
+<p class="paragraph">
+Библиотека ADO может быть использована в любых средах, которые в состоянии выступить в роли OLE-клиента, например,
+в MS Office (VBA), 1C:Предприятии, административных скриптах Windows (.vbs и .js) и т.д. Примеры кода в настоящей
+статье будут приводиться на языке VBScript для административных скриптов Windows. С помощью библиотеки ADO можно
+обратиться к огромному количеству типов баз данных, например, dBASE, Access, Excel, Oracle, Paradox, MS SQL Server,
+Sybase, текстовые файлы, FoxPro, Active Directory Service, Microsoft Jet, Interbase, Informix, PostgreSQL, MySQL
+и т.д., необходимо только наличие установленного соответствующего OLE-провайдера ("драйвера" соответствующего типа
+базы данных, который устанавливается в систему как правило из дистрибутива этой же базы данных). Примеры кода в
+настоящей статье будут приводиться только для MS SQL Server, т.к. невозможно объять необъятное. Перечень свойств
+и методов ADO, приведённый в этой статье, не является исчерпывающим (в некоторых случаях и описание некоторых
+свойств и методов не является полным). Полное описание объектной модели библиотеки ADO вы можете получить в MSDN
+или в файле "ADO210.CHM", который входит в поставку MS Office. Однако материала данной статьи достаточно, чтобы
+начать работать с ADO.
+</p>
+
+<p class="paragraph">
+Основными объектами библиотеки ADO являются объекты <a href="#ConnectionObject">Connection</a>,
+<a href="#CommandObject">Command</a> и <a href="#RecordsetObject">Recordset</a>.
+</p>
+
+<h2 style="text-indent: 1.3em;"><a name="ConnectionObject">Объект Connection</a></h2>
+
+<p class="paragraph">
+Объект Connection обеспечивает создание подключения к источнику данных и эквивалентен текущему сетевому соединению
+с сервером. Объект Connection предоставляет возможность настройки соединения перед его открытием, установки базы
+данных по умолчанию, установки и разрыва соединения с источником данных, задания настроек и выполнения команды с
+помощью метода Execute. Примечание: для выполнения команды можно использовать также метод Execute объекта
+<a href="#CommandObject">Command</a>, не прибегая к объекту Connection.
+</p>
+
+<p class="paragraph">
+Объект Connection создаётся следующим образом:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+Set objConn = CreateObject("ADODB.Connection")
+</span>
+<br><br>
+После этого вы можете вызывать и использовать методы и свойства этого объекта для доступа к базам данных:
+<br><br>
+<table width="100%" border="1" cellspacing="0">
+<tbody><tr><th></th><th>Описание</th></tr>
+
+<tr>
+<td>Version</td>
+<td>Содержит строку, определяющую версию библиотеки. Только чтение.</td>
+</tr>
+
+<tr>
+<td>ConnectionString</td>
+<td>Определяет параметры подключения к источнику данных. Чтение и запись. Это строка, содержащая несколько
+параметров, разделённых точкой с запятой. Свойство ConnectionString автоматически получает значение, заданное в
+качестве одноимённого аргумента метода Open. Свойство ConnectionString доступно для записи только для закрытого
+соединения. Многочисленные примеры различных строк подключения для различных типов баз данных вы можете найти в
+Интернете или в документации к соответствующим программным продуктам.</td>
+</tr>
+
+<tr>
+<td>ConnectionTimeout</td>
+<td>Устанавливает или возвращает число секунд ожидания подключения к базе данных. Значение по умолчанию - 15.
+Используйте это свойство, если возникают проблемы из-за плотного сетевого трафика или загруженности сервера.
+Если время, указанное в ConnectionTimeout, истекает до открытия подключения, происходит ошибка, и ADO отменяет
+попытку подключения. Если Вы установите свойство в ноль, ADO будет ждать бесконечно, пока подключение не будет
+открыто. Удостоверьтесь, что используемый провайдер поддерживает свойство ConnectionTimeout. Свойство доступно для
+записи только для закрытого соединения.</td>
+</tr>
+
+<tr>
+<td>CommandTimeout</td>
+<td>Устанавливает или возвращает число секунд ожидания выполнения команды. Значение по умолчанию - 30. Чтение и
+запись. Используйте это свойство, если возникают проблемы из-за плотного сетевого трафика или загруженности сервера.
+Если время, указанное в CommandTimeout, истекает до завершения выполнения команды, происходит ошибка, и ADO отменяет
+команду. Если Вы установите свойство в ноль, ADO будет ждать бесконечно, пока команда не будет выполнена.
+Удостоверьтесь, что используемый провайдер поддерживает свойство CommandTimeout. Установка CommandTimeout объекта
+Connection никак не связана с установкой свойства CommandTimeout объекта Command.</td>
+</tr>
+
+<tr>
+<td>Provider</td>
+<td>Устанавливает или возвращает строковое значение, которое содержит имя используемого провайдера. По умолчанию
+- "MSDASQL". Провайдер может быть также установлен содержанием свойства ConnectionString или параметром метода Open.
+Определение провайдера в более чем одном месте может иметь непредсказуемые результаты.</td>
+</tr>
+
+<tr>
+<td>DefaultDatabase</td>
+<td>Устанавливает или возвращает строковое значение, которое содержит заданную по умолчанию базу данных. Если есть
+заданная по умолчанию база данных, запросы SQL могут использовать "дисквалифицированный" синтаксис для обращения
+к объектам в этой базе данных. Чтобы обращаться к объектам из другой базы данных, вы должны "квалифицировать"
+имена объектов именем этой базы данных. При подключении провайдер записывает заданную по умолчанию базу данных в
+это свойство. Некоторые провайдеры разрешают только одну такую базу данных на одно подключение, и в этом случае вы
+не сможете изменить это свойство. Некоторые источники данных и провайдеры могут не поддерживать это свойство,
+генерируя ошибку или возвращая пустую строку.</td>
+</tr>
+
+<tr>
+<td>CursorLocation</td>
+<td>Определяет расположение курсора, т.е. место, где выполняется работа с данными. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adUseNone(1) - курсор не используется (только для совместимости со старыми версиями).</li>
+<li>adUseServer(2) - курсор на стороне провайдера (по умолчанию).</li>
+<li>adUseClient(3) - курсор на стороне пользователя. Может предоставлять дополнительные возможности, которые
+отсутствуют на стороне провайдера.</li>
+</ul>
+Изменение свойства CursorLocation не имеет никакого эффекта при уже существующем подключении. Связанные объекты
+Recordset и курсоры, возвращённые методом Execute, наследуют эту установку. При открытом объекте Recordset это
+свойство доступно только для чтения.
+</td>
+</tr>
+
+<tr>
+<td>Mode</td>
+<td>Определяет режим доступа для изменения данных в сеансе. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adModeUnknown(0) - режим доступа не установлен или не может быть определён (по умолчанию).</li>
+<li>adModeRead(1) - режим только для чтения.</li>
+<li>adModeWrite(2) - режим только для записи.</li>
+<li>adModeReadWrite(3) - режим для чтения и записи.</li>
+<li>adModeShareDenyRead(4) - не разрешает открывать соединение на чтение другим пользователям.</li>
+<li>adModeShareDenyWrite(8) - не разрешает открывать соединение на запись другим пользователям.</li>
+<li>adModeShareExclusive(12) - не разрешает открывать соединение другим пользователям.</li>
+<li>adModeShareDenyNone(16) - разрешает открывать соединение с любым видом доступа другим пользователям.</li>
+</ul>
+Вы можете установить это свойство только тогда, когда объект Connection закрыт.
+</td>
+</tr>
+
+<tr>
+<td>Errors</td>
+<td>Содержит коллекцию объектов Error. Любая инструкция, использующая объекты ADO, может сгенерировать одну или
+более ошибок провайдера. Когда происходит ошибка, в эту коллекцию могут быть помещены один или более объектов Error.
+Если следующая подобная инструкция также сгенерирует ошибку, коллекция будет очищена и заполнена заново. Каждый
+объект Error представляет определённую ошибку провайдера, но не ошибку ADO (ошибки ADO подвергаются механизму
+обработки исключительных ситуаций). Используйте метод Clear, чтобы вручную очистить коллекцию Errors. Некоторые
+свойства и методы возвращают предупреждения, которые появляются как объекты Error в коллекции Errors, при этом
+не останавливая выполнение программы. Перед тем, как вы вызываете методы Resync, UpdateBatch или CancelBatch
+объекта Recordset, метод Open объекта Connection, или устанавливаете свойство Filter объекта Recordset, вызовите
+метод Clear коллекции Errors. После этого вы можете прочитать свойство Count коллекции Errors, чтобы проверить
+возвращенные предупреждения.</td>
+</tr>
+
+<tr>
+<td>State</td>
+<td>Содержит состояние объекта. Только чтение. Свойство State может принимать следующие значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adStateClosed(0) - объект закрыт.</li>
+<li>adStateOpen(1) - объект открыт.</li>
+<li>adStateConnecting(2) - объект соединяется.</li>
+<li>adStateExecuting(4) - объект выполняет команду.</li>
+<li>adStateFetching(8) - объект выполняет выборку строк.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Properties</td>
+<td>Содержит коллекцию динамических свойств соединения (объектов Property). Подробнее - см. раздел "Динамические
+свойства объектов".</td>
+</tr>
+
+<tr>
+<td>Open(ConnectionString, UserID, Password, Options)</td>
+<td>Открывает сеанс подключения к источнику данных. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>ConnectionString - необязательный. Строка, определяющая параметры подключения к источнику данных. Автоматически
+наследует значение свойства ConnectionString объекта Connection. Вы можете или установить свойство ConnectionString
+объекта Connection перед вызовом метода Open, или использовать параметр ConnectionString метода Open.</li>
+<li>UserID - необязательный. Имя пользователя, используемое при соединении.</li>
+<li>Password - необязательный. Пароль пользователя.</li>
+<li>Options - необязательный. Способ подключения к источнику данных. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adAsyncConnect(16) - открывает подключение асинхронно. Чтобы определить, когда подключение станет доступным,
+можно обрабатывать событие ConnectComplete.</li>
+<li>adConnectUnspecified(-1) - по умолчанию. Открывает подключение синхронно.</li>
+</ul>
+</li>
+</ul>
+Если вы передаете информацию о пользователе и пароле как в строке ConnectionString, так и в параметрах UserID и
+Password, параметры UserID и Password имеют приоритет. Закончив ваши операции с открытым подключением, используйте
+метод Close() для освобождения всех связанных системных ресурсов.
+</td>
+</tr>
+
+<tr>
+<td>Close()</td>
+<td>Закрывает соединение с источником данных. Закрытие объекта не приводит к удалению его из памяти. Можно изменить
+свойства объекта, а затем открыть его снова. При закрытии подключения закрываются также все активные наборы записей
+(объекты Recordset) для данного подключения. Объекты Command, связанные с данным подключением, уже не будут связаны
+с данным объектом Connection. Закрытие объекта Connection во время транзакции генерирует ошибку и ADO автоматически
+откатывает транзакцию.</td>
+</tr>
+
+<tr>
+<td>Execute(CommandText, RecordsAffected, Options)</td>
+<td>Выполняет запрос, оператор SQL, хранимую процедуру или любую другую команду, доступную провайдеру. Возвращает
+объект Recordset, доступный только для чтения курсором Forward-only, если переданная команда возвращает записи.
+(Если нужен объект Recordset, доступный для записи, следует создать его непосредственно, и воспользоваться его
+свойствами и методами.) Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>CommandText - обязательный. Строка, содержащая оператор SQL, имя таблицы, хранимой процедуры или другую команду
+провайдера.</li>
+<li>RecordsAffected - необязательный. Целое число (long), определяющее число записей, затронутых командой.
+Заполняется провайдером.</li>
+<li>Options - необязательный. Целое число (long), определяющее тип команды. Возможные значения (значения можно
+суммировать):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adCmdText(1) - текстовое определение команды или хранимой процедуры.</li>
+<li>adCmdTable(2) - создать SQL-запрос, который вернёт все строки указанной таблицы.</li>
+<li>adCmdStoredProc(4) - хранимая процедура.</li>
+<li>adCmdUnknown(8) - тип команды неизвестен (по умолчанию).</li>
+<li>adAsyncExecute(16) - асинхронное выполнение команды.</li>
+<li>adExecuteNoRecords(128) - не возвращать строки.</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Cancel()</td>
+<td>Отменяет выполнение последнего асинхронного вызова Execute() или Open(), если действие ещё не завершено.</td>
+</tr>
+
+<tr>
+<td>ConnectComplete(pError, adStatus, pConnection)</td>
+<td>Событие возникает после того, как осуществлено подключение к источнику данных. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>pError - содержит объект Error, если произошли ошибки (свойство adStatus равно adStatusErrorsOccurred(2))</li>
+<li>adStatus - определяет состояние соединения. Возможные значения (для всех событий):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adStatusOK(1) - операция произведена успешно.</li>
+<li>adStatusErrorsOccurred(2) - операция потерпела неудачу.</li>
+<li>adStatusCantDeny(3) - операция не может быть отменена.</li>
+<li>adStatusCancel(4) - произошла отмена операции.</li>
+<li>adStatusUnwantedEvent(5) - предотвращает последующие уведомления до завершения выполнения метода события.</li>
+</ul>
+</li>
+<li>pConnection - объект Connection, который вызвал событие.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Disconnect(adStatus, pConnection)</td>
+<td>Событие возникает после того, как прервано подключение к источнику данных. Параметры аналогичны параметрам
+события ConnectComplete.</td>
+</tr>
+
+<tr>
+<td>InfoMessage(pError, adStatus, pConnection)</td>
+<td>Событие возникает каждый раз, когда генерируется предупреждение (warning). Параметры аналогичны параметрам
+события ConnectComplete.</td>
+</tr>
+
+<tr>
+<td>WillConnect(ConnectionString, UserID, Password, Options, adStatus, pConnection)</td>
+<td>Событие возникает перед тем, как осуществлено подключение к источнику данных. Параметры в основном аналогичны
+параметрам события ConnectComplete. Options - целое число (long), которое указывает способ подключения -
+adAsyncConnect(16) или adConnectUnspecified(-1). В обработчике события можно изменять параметры подключения.</td>
+</tr>
+
+<tr>
+<td>WillExecute(Source, CursorType, LockType, Options, adStatus, pCommand, pRecordset, pConnection)</td>
+<td>Событие возникает перед выполнением команды. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Source - строка, содержащая оператор SQL или имя хранимой процедуры.</li>
+<li>CursorType - тип курсора для Recordset, который будет открыт. Тип курсора можно изменять. Возможные
+значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adOpenUnspecified(-1) - тип курсора не определён.</li>
+<li>adOpenForwardOnly(0) - определяет forward-only курсор. То же, что и статический курсор, но вы
+можете прокручивать записи только вперед. Это оптимизирует выполнение, если вы должны сделать только один проход по
+Recordset'у.</li>
+<li>adOpenKeyset(1) - Определяет keyset-курсор. То же, что и динамический курсор, но вы не можете видеть записи,
+добавляемые другими пользователями, хотя записи, удаляемые другими пользователями, недоступны в вашем Recordset'е.
+Изменения данных другими пользователями видимы.</li>
+<li>adOpenDynamic(2) - Определяет динамический курсор. Добавления, изменения и удаления другими пользователями
+видимы; разрешены все типы движения через Recordset, исключая закладки, если провайдер их не поддерживает.</li>
+<li>adOpenStatic(3) - Определяет статический курсор. Статическая копия набора записей, которую вы можете
+использовать, чтобы найти данные или генерировать отчёты. Добавления, изменения или удаления другими пользователями
+не видимы.</li>
+</ul>
+</li>
+<li>LockType - тип блокировки для Recordset, который будет открыт. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adLockUnspecified(-1) - тип блокировки не определён.</li>
+<li>adLockReadOnly(1) - только для чтения. Вы не можете изменить данные.</li>
+<li>adLockPessimistic(2) - пессимистическая блокировка. Провайдер гарантирует успешное редактирование записей.
+Запись блокируется сразу после начала редактирования и до момента сохранения записей.</li>
+<li>adLockOptimistic(3) - оптимистическая блокировка. Провайдер осуществляет блокировку записей только в момент
+сохранения изменений, т.е. когда вы вызываете метод Update().</li>
+<li>adLockBatchOptimistic(4) - оптимистические пакетные модификации. Требуется для пакетного режима модификации
+(отложенное сохранение записей).</li>
+</ul>
+</li>
+<li>Options - целое число (long), указывающее опции выполнения команды или открытия Recordset'а.</li>
+<li>adStatus - определяет состояние события. Возможные значения - см. описание аналогичного параметра события
+ConnectComplete.</li>
+<li>pCommand - объект Command, для которого применяется это событие.</li>
+<li>pRecordset - объект Recordset, для которого применяется это событие.</li>
+<li>pConnection - объект Connection, для которого применяется это событие.</li>
+</ul>
+Событие WillExecute может произойти из-за вызовов Connection.Execute, Command.Execute, или Recordset.Open. Параметр
+pConnection всегда содержит ссылку на объект Connection. Если событие происходит из-за вызова Connection.Execute,
+параметры pRecordset и pCommand будут установлены в Nothing. Если событие происходит из-за вызова Recordset.Open,
+параметр pRecordset будет содержать ссылку на объект Recordset, а параметр pCommand будет установлен в Nothing.
+Если событие происходит из-за вызова Command.Execute, параметр pCommand будет содержать ссылку на  объект Command,
+а параметр pRecordset будет установлен в Nothing.
+</td>
+</tr>
+
+<tr>
+<td>ExecuteComplete(RecordsAffected, pError, adStatus, pCommand, pRecordset, pConnection)</td>
+<td>Событие происходит после завершения работы команды. Параметр RecordsAffected - целое число (long) - содержит
+количество записей, которые затрагивает команда. Остальные параметры аналогичны одноимённым параметрам описанных
+выше других событий. Событие ExecuteComplete может произойти вследствие вызовов Connection.Execute, Command.Execute,
+Recordset.Open, Recordset.Requery или Recordset.NextRecordset.</td>
+</tr>
+
+<tr>
+<td>BeginTrans()<br><br>CommitTrans()<br><br>RollbackTrans()</td>
+<td>Вызов метода BeginTrans начинает новую транзакцию. Провайдеры, которые поддерживают вложенные транзакции,
+при вызове метода BeginTrans в пределах открытой транзакции начинают новую, вложенную транзакцию. Возвращаемое
+методом BeginTrans значение указывает уровень вложения: возвращаемое значение "1" указывает, что вы открыли
+транзакцию верхнего уровня (то есть транзакция не вложена в пределах другой транзакции), "2" указывает, что вы
+открыли транзакцию второго уровня (транзакция, вложенная в пределах транзакции верхнего уровня), и т.д.
+<br><br>
+Вызов метода CommitTrans сохраняет изменения, сделанные в пределах открытой транзакции и завершает транзакцию. Вызов
+метода RollbackTrans полностью отменяет любые изменения, сделанные в пределах открытой транзакции и завершает
+транзакцию. Вызов любого из этих методов в момент, когда нет никакой открытой транзакции, генерирует ошибку. Вызовы
+методов CommitTrans или RollbackTrans затрагивают только последнюю открытую транзакцию; вы должны закрыть или
+откатить текущую транзакцию прежде, чем разрешить любые высокоуровневые транзакции.
+</td>
+</tr>
+
+<tr>
+<td>BeginTransComplete(TransactionLevel, pError, adStatus, pConnection)<br><br>
+CommitTransComplete(pError, adStatus, pConnection)<br><br>
+RollbackTransComplete(pError, adStatus, pConnection)
+</td>
+<td>Эти события вызываются после того, как заканчивает выполняться соответствующая операция (по работе с
+транзакциями) на объекте Connection.</td>
+</tr>
+
+<tr>
+<td>OpenSchema(QueryType, Criteria, SchemaID)</td>
+<td>Получает информацию схемы базы данных от провайдера. Возвращает объект Recordset. Recordset будет открыт как
+статический курсор только для чтения. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>QueryType - число, тип запроса схемы. Подробнее - см. MSDN, описание перечисления "SchemaEnum".</li>
+<li>Criteria - необязательный. Массив ограничений запроса (фильтр). Подробнее - см. MSDN.</li>
+<li>SchemaID - GUID для запроса схемы провайдера, не определенной спецификацией. Этот параметр требуется, если
+QueryType установлен в adSchemaProviderSpecific(-1); иначе этот параметр не используется.</li>
+</ul>
+</td>
+</tr>
+
+</tbody></table>
+<br>
+</p>
+
+<p class="paragraph">
+Объект Error содержит информацию об ошибках доступа к данным, которые принадлежат отдельной операции провайдера. Вы
+можете обратиться к свойствам объекта Error, чтобы получить информацию о каждой ошибке:
+<br><br>
+<table width="100%" border="1" cellspacing="0">
+<tbody><tr><th></th><th>Описание</th></tr>
+
+<tr>
+<td>Description</td>
+<td>Содержит строку, определяющую короткое описание ошибки. Это свойство по умолчанию.</td>
+</tr>
+
+<tr>
+<td>Number</td>
+<td>Содержит уникальный код, определяющий тип ошибки (целое число).</td>
+</tr>
+
+<tr>
+<td>Source</td>
+<td>Идентифицирует имя объекта, который вызвал ошибку (строка).</td>
+</tr>
+
+<tr>
+<td>SQLState</td>
+<td>Содержит строку из пяти символов, которая указывает код ошибки по стандарту SQL ANSI.</td>
+</tr>
+
+<tr>
+<td>NativeError</td>
+<td>Содержит определённый провайдером код ошибки (целое число).</td>
+</tr>
+
+</tbody></table>
+<br>
+</p>
+
+<p class="paragraph">
+Подключаемся к базе данных и выполняем запрос с помощью объекта Connection:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = CreateObject("ADODB.Connection")
+'Определяем параметры подключения к базе данных
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objConn.ConnectionString = ConnectString
+objConn.ConnectionTimeOut = 15
+objConn.CommandTimeout = 30
+'Подключаемся к базе данных
+objConn.Open
+'Выполняем запрос
+Set objRecordset = objConn.Execute("SELECT name, filename FROM sysdatabases")
+'Перебираем результаты запроса
+While Not objRecordset.EOF
+    strRes = vbNullString
+    For i=0 To objRecordset.Fields.Count-1
+        strRes = strRes &amp; CStr(objRecordset.Fields(i).Value) &amp; vbTab
+    Next
+    WScript.Echo Trim(strRes)
+    objRecordset.MoveNext
+Wend
+'Закрываем соединение
+objConn.Close
+Set objConn = Nothing
+Set objRecordset = Nothing
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Работаем с ошибками провайдера:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = CreateObject("ADODB.Connection")
+'Определяем параметры подключения к базе данных
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "bla-bla-bla=bla-bla-bla;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objConn.ConnectionString = ConnectString
+'Подключаемся к базе данных
+objConn.Open
+'Перебираем коллекцию ошибок
+For Each E in objConn.Errors
+    WScript.Echo "Error.Description: " &amp; E.Description
+    WScript.Echo "Error.Number: " &amp; E.Number
+    WScript.Echo "Error.Source: " &amp; E.Source
+    WScript.Echo "Error.SQLState: " &amp; E.SQLState
+    WScript.Echo "Error.NativeError: " &amp; E.NativeError
+    WScript.Echo
+Next
+'Закрываем соединение
+objConn.Close
+Set objConn = Nothing
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Пример асинхронного подключения и обработки событий:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = WScript.CreateObject("ADODB.Connection", "Connection_")
+'Определяем параметры подключения к базе данных
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB" &amp; _
+                ";bla-bla=bla-bla" &amp; _
+                ";Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+WScript.Echo "Подключаемся к базе данных (асинхронно)..."
+objConn.Open ,,,16
+WScript.Echo "objConn.State = " &amp; objConn.State
+WScript.Echo "Спим две секунды..."
+WScript.Sleep 2000
+WScript.Echo "Закончили спать."
+WScript.Echo "Закрываем соединение..."
+objConn.Close
+WScript.Echo "Снова подключаемся к базе данных (асинхронно)..."
+objConn.Open ,,,16
+WScript.Echo "objConn.State = " &amp; objConn.State
+WScript.Echo "Отменяем соединение..."
+objConn.Cancel
+Set objConn = Nothing
+Set objRecordset = Nothing
+'************************************************
+Function Connection_WillConnect(ConnectionString, UserID, _
+                                Password, Options, adStatus, pConnection)
+    pConnection.ConnectionString = ConnectString
+    WScript.Echo "WillConnect event: pConnection.State = " &amp; pConnection.State
+End Function
+Function Connection_ConnectComplete(pError, adStatus, pConnection)
+    WScript.Echo "ConnectComplete event: pConnection.State = " &amp; pConnection.State
+End Function
+Function Connection_Disconnect(adStatus, pConnection)
+    WScript.Echo "Disconnect event: pConnection.State = " &amp; pConnection.State
+End Function
+Function Connection_InfoMessage(pError, adStatus, pConnection)
+    WScript.Echo "InfoMessage event: pError.Description = " &amp; pError.Description
+End Function
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Пример асинхронного выполнения запроса и обработки событий:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = WScript.CreateObject("ADODB.Connection", "Connection_")
+'Определяем параметры подключения к базе данных
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objConn.ConnectionString = ConnectString
+'Подключаемся к базе данных
+objConn.Open
+'Выполняем запрос (асинхронно)
+Set objRecordset = objConn.Execute("SELECT name, filename FROM sysdatabases",,16)
+'Ждём, пока выполнится запрос
+While objConn.State &lt;&gt; 1
+    WScript.Sleep 500
+Wend
+'Закрываем соединение
+objConn.Close
+Set objConn = Nothing
+Set objRecordset = Nothing
+'************************************************
+Function Connection_ExecuteComplete(RecordsAffected, pError, adStatus, _
+                                    pCommand, pRecordset, pConnection)
+    'Перебираем результаты запроса
+    While Not pRecordset.EOF
+        strRes = vbNullString
+        For i=0 To pRecordset.Fields.Count-1
+            strRes = strRes &amp; CStr(pRecordset.Fields(i).Value) &amp; vbTab
+        Next
+        WScript.Echo Trim(strRes)
+        pRecordset.MoveNext
+    Wend
+End Function
+'************************************************
+Function Connection_WillExecute(strSource, CursorType, LockType, Options, _
+                                adStatus, pCommand, pRecordset, pConnection)
+    CursorType = 2
+    LockType = 2
+    WScript.Echo "WillExecute event: CursorType = " &amp; CursorType
+    WScript.Echo "WillExecute event: LockType = " &amp; LockType
+    WScript.Echo "WillExecute event: Options = " &amp; Options
+End Function
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Пример работы с транзакциями:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = WScript.CreateObject("ADODB.Connection", "Connection_")
+'Определяем параметры подключения к базе данных
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objConn.ConnectionString = ConnectString
+'Подключаемся к базе данных
+objConn.Open
+'Начинаем транзакцию
+objConn.BeginTrans
+'Создаём таблицу
+Set objRecordset = objConn.Execute("CREATE TABLE newTable (newColumn INT PRIMARY KEY)")
+'Откатываем транзакцию
+objConn.RollbackTrans
+'Закрываем соединение
+objConn.Close
+Set objConn = Nothing
+Set objRecordset = Nothing
+'************************************************
+Function Connection_BeginTransComplete(TransactionLevel, pError, _
+                                       adStatus, pConnection)
+    WScript.Echo "BeginTransComplete event: TransactionLevel = " &amp; TransactionLevel
+End Function
+'************************************************
+Function Connection_CommitTransComplete(pError, adStatus, pConnection)
+    WScript.Echo "CommitTransComplete event"
+End Function
+'************************************************
+Function Connection_RollbackTransComplete(pError, adStatus, pConnection)
+    WScript.Echo "RollbackTransComplete event"
+End Function
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Пример работы с методом OpenSchema:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = CreateObject("ADODB.Connection")
+'Определяем параметры подключения к базе данных
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objConn.ConnectionString = ConnectString
+'Подключаемся к базе данных
+objConn.Open
+'Получаем данные о столбцах таблиц, которые являются доступными для
+'данного пользователя. Фильтруем по базе данных "pubs", таблице "authors".
+Set objRecordset = objConn.OpenSchema(4, Array("pubs", "dbo", "authors"))
+'Перебираем результаты запроса
+While Not objRecordset.EOF
+    strRes = vbNullString
+    For i=0 To objRecordset.Fields.Count-1
+        If IsNull(objRecordset.Fields(i).Value) Then
+            strRes = strRes &amp; "NULL" &amp; vbTab
+        Else
+            strRes = strRes &amp; CStr(objRecordset.Fields(i).Value) &amp; vbTab
+        End If
+    Next
+    WScript.Echo Trim(strRes)
+    objRecordset.MoveNext
+Wend
+'Закрываем соединение
+objConn.Close
+Set objConn = Nothing
+Set objRecordset = Nothing
+</pre>
+</span>
+</p>
+
+<h2 style="text-indent: 1.3em;">Динамические свойства объектов</h2>
+
+<p class="paragraph">
+Объекты Connection, Command, Recordset, Parameter и Field имеют встроенную коллекцию Properties, содержащую объекты
+Property. Коллекция имеет следующие свойства и методы:
+</p><ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Count - содержит количество объектов в коллекции.</li>
+<li>Item(index) -  возвращает элемент коллекции по имени или порядковому номеру.</li>
+<li>Refresh() - обновляет коллекцию, чтобы отразить доступные объекты, определённые провайдером.</li>
+</ul>
+Объект Property представляет динамические характеристики объекта ADO, которые определяются провайдером
+данных. Объект Property обладает следующими свойствами:
+<br><br>
+<table width="100%" border="1" cellspacing="0">
+<tbody><tr><th></th><th>Описание</th></tr>
+
+<tr>
+<td>Name</td>
+<td>Содержит имя свойства (строка).</td>
+</tr>
+
+<tr>
+<td>Type</td>
+<td>Содержит тип свойства. Может принимать значения перечисления DataTypeEnum (подробнее - см. MSDN, а также
+свойство Type объекта Parameter в данной статье).</td>
+</tr>
+
+<tr>
+<td>Value</td>
+<td>Содержит значение свойства.</td>
+</tr>
+
+<tr>
+<td>Attributes</td>
+<td>Содержит одну или несколько характеристик свойства - сумму одной или более констант:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adPropNotSupported(0) - провайдер не поддерживает это свойство.</li>
+<li>adPropRequired(1) - пользователь должен задать значение данного свойства перед инициализацией источника
+данных.</li>
+<li>adPropOptional(2) - пользователю не требуется задавать значение данного свойства перед инициализацией источника
+данных.</li>
+<li>adPropRead(512) - данное свойство доступно для чтения.</li>
+<li>adPropWrite(1024) - пользователь может задать значение данному свойству.</li>
+</ul>
+</td>
+</tr>
+
+</tbody></table>
+<br>
+<p></p>
+
+<p class="paragraph">
+Вы можете изменять значения (Value) этих свойств, но не их характеристики (Attributes). Вы не можете удалить такое
+свойство.
+</p>
+
+<p class="paragraph">
+Чтение коллекции Properties:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = CreateObject("ADODB.Connection")
+'Определяем параметры подключения к базе данных
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objConn.ConnectionString = ConnectString
+'Подключаемся к базе данных
+objConn.Open
+'Перебираем коллекцию динамических свойств
+i=1
+For Each Prop in objConn.Properties
+    WScript.Echo i
+    WScript.Echo "Property.Name: " &amp; Prop.Name
+    WScript.Echo "Property.Type: " &amp; Prop.Type
+    WScript.Echo "Property.Value: " &amp; Prop.Value
+    WScript.Echo "Property.Attributes: " &amp; Prop.Attributes
+    If (Prop.Attributes And 1) = 1 Then
+    	WScript.Echo "необходимо задать значение свойства перед инициализацией источника данных: ДА"
+    Else
+    	WScript.Echo "необходимо задать значение свойства перед инициализацией источника данных: НЕТ"
+    End If
+    If (Prop.Attributes And 2) = 2 Then
+    	WScript.Echo "не требуется задавать значение свойства перед инициализацией источника данных: ДА"
+    Else
+    	WScript.Echo "не требуется задавать значение свойства перед инициализацией источника данных: НЕТ"
+    End If
+    If (Prop.Attributes And 512) = 512 Then
+    	WScript.Echo "свойство доступно для чтения: ДА"
+    Else
+    	WScript.Echo "свойство доступно для чтения: НЕТ"
+    End If
+    If (Prop.Attributes And 1024) = 1024 Then
+    	WScript.Echo "свойство доступно для записи: ДА"
+    Else
+    	WScript.Echo "свойство доступно для записи: НЕТ"
+    End If
+    WScript.Echo
+    i=i+1
+Next
+'Закрываем соединение
+objConn.Close
+Set objConn = Nothing
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Смена текущей базы данных с помощью коллекции Properties:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = CreateObject("ADODB.Connection")
+'Определяем параметры подключения к базе данных
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objConn.ConnectionString = ConnectString
+objConn.ConnectionTimeOut = 15
+objConn.CommandTimeout = 30
+'Подключаемся к базе данных
+objConn.Open
+'Выполняем запрос
+Set objRecordset = objConn.Execute("SELECT name, filename FROM sysdatabases")
+'Перебираем результаты запроса
+While Not objRecordset.EOF
+    strRes = vbNullString
+    For i=0 To objRecordset.Fields.Count-1
+        strRes = strRes &amp; CStr(objRecordset.Fields(i).Value) &amp; vbTab
+    Next
+    WScript.Echo Trim(strRes)
+    objRecordset.MoveNext
+Wend
+WScript.Echo
+'Меняем текущую базу данных
+objConn.Properties("Current Catalog").Value = "pubs"
+'Выполняем запрос
+Set objRecordset = objConn.Execute("SELECT au_lname, au_fname FROM authors")
+'Перебираем результаты запроса
+While Not objRecordset.EOF
+    strRes = vbNullString
+    For i=0 To objRecordset.Fields.Count-1
+        strRes = strRes &amp; CStr(objRecordset.Fields(i).Value) &amp; vbTab
+    Next
+    WScript.Echo Trim(strRes)
+    objRecordset.MoveNext
+Wend
+'Закрываем соединение
+objConn.Close
+Set objConn = Nothing
+Set objRecordset = Nothing
+</pre>
+</span>
+</p>
+
+<h2 style="text-indent: 1.3em;"><a name="CommandObject">Объект Command</a></h2>
+
+<p class="paragraph">
+Объект Command создаётся следующим образом:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+Set objComm = CreateObject("ADODB.Command")
+</span>
+<br><br>
+После этого вы можете вызывать и использовать методы и свойства этого объекта.
+</p>
+
+<p class="paragraph">
+Объект Command существует для задания и выполнения команд и запросов. Хотя запрос можно выполнить и без
+использования объекта Command (с помощью метода Execute объекта Connection или метода Open объекта Recordset),
+объект Command незаменим при выполнении запроса с <i>параметрами</i> и удобен в случае, когда требуется сохранить
+текст команды для её повторного использования. Объект Command может быть использован как в паре с объектом
+Connection, так и без него, т.к. строку подключения можно задать непосредственно в свойстве ActiveConnection
+объекта Command.
+</p>
+
+<p class="paragraph">
+Свойства и методы объекта Command:
+<br><br>
+<table width="100%" border="1" cellspacing="0">
+<tbody><tr><th></th><th>Описание</th></tr>
+
+<tr>
+<td>ActiveConnection</td>
+<td>Определяет объект Connection, с которым связан данный объект Command. Значением этого свойства может быть и
+строка, содержащая ту же информацию, что и свойство ConnectionString объекта Connection. Попытка выполнить метод
+Execute объекта Command при незаданном свойстве ActiveConnection приведёт к ошибке. Назначение закрытого объекта
+Connection в качестве значения свойства ActiveConnection также вызовет ошибку (объект должен быть открыт). Закрытие
+объекта Connection, с которым связан объект Command, устанавливает свойство ActiveConnection в Nothing.</td>
+</tr>
+
+<tr>
+<td>CommandText</td>
+<td>Строка, определяющая текст команды, например, оператор SQL, имя таблицы или вызов хранимой процедуры. В
+зависимости от установки свойства CommandType, ADO может автоматически изменить свойство CommandText.</td>
+</tr>
+
+<tr>
+<td>CommandTimeout</td>
+<td>Устанавливает или возвращает число секунд ожидания выполнения команды. Значение по умолчанию - 30. Чтение и
+запись. Используйте это свойство, если возникают проблемы из-за плотного сетевого трафика или загруженности сервера.
+Если время, указанное в CommandTimeout, истекает до завершения выполнения команды, происходит ошибка, и ADO отменяет
+команду. Если Вы установите свойство в ноль, ADO будет ждать бесконечно, пока команда не будет выполнена.
+Удостоверьтесь, что используемый провайдер поддерживает свойство CommandTimeout. Установка CommandTimeout объекта
+Connection никак не связана с установкой свойства CommandTimeout объекта Command.</td>
+</tr>
+
+<tr>
+<td>CommandType</td>
+<td>Определяет тип команды. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adCmdUnspecified(-1) - тип команды не определён.</li>
+<li>adCmdText(1) - текстовое определение команды или хранимой процедуры.</li>
+<li>adCmdTable(2) - создать SQL-запрос, который вернёт все строки указанной таблицы.</li>
+<li>adCmdStoredProc(4) - хранимая процедура.</li>
+<li>adCmdUnknown(8) - тип команды неизвестен (по умолчанию).</li>
+</ul>
+Если значение свойства равно adCmdUnknown (по умолчанию), команды могут выполняться медленнее, потому что
+ADO должна делать запросы провайдеру, чтобы определить, является ли CommandText инструкцией SQL, хранимой процедурой
+или именем таблицы. Если свойство CommandType не соответствует типу команды в свойстве CommandText, при вызове
+метода Execute происходит ошибка.
+</td>
+</tr>
+
+<tr>
+<td>Prepared</td>
+<td>Указывает, сохранить ли откомпилированную версию команды перед первым выполнением (true или false). Это может
+замедлить первое выполнение команды, но ускорит любое последующее выполнение. Если провайдер не поддерживает
+компиляцию команды, при установке этого свойства в true может произойти ошибка (или автоматическая установка в
+false).</td>
+</tr>
+
+<tr>
+<td>State</td>
+<td>Содержит состояние объекта. Только чтение. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adStateClosed(0) - объект закрыт.</li>
+<li>adStateOpen(1) - объект открыт.</li>
+<li>adStateConnecting(2) - объект соединяется.</li>
+<li>adStateExecuting(4) - объект выполняет команду.</li>
+<li>adStateFetching(8) - объект выполняет выборку строк.</li>
+</ul>
+Свойство State может иметь комбинацию значений. Например, если асинхронно выполняется инструкция, это свойство будет
+иметь объединенное значение adStateOpen и adStateExecuting.
+</td>
+</tr>
+
+<tr>
+<td>Properties</td>
+<td>Содержит коллекцию динамических свойств объекта (объектов Property). Подробнее - см. раздел "Динамические
+свойства объектов".</td>
+</tr>
+
+<tr>
+<td>Parameters</td>
+<td>Содержит коллекцию параметров объекта (объектов Parameter). Использование метода Refresh() этой коллекции
+отыскивает информацию параметров для хранимой процедуры или параметрического запроса. Некоторые провайдеры
+не поддерживают хранимые процедуры или параметрические запросы; в этом случае вызов метода Refresh() вызовет
+ошибку. Перед вызовом метода Refresh() вы должны правильно установить значения свойств ActiveConnection, CommandText
+и CommandType. Если вы обращаетесь к коллекции перед вызовом метода Refresh(), ADO автоматически вызовет его и
+заполнит коллекцию. Коллекция параметров имеет следующие свойства и методы:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Count - содержит количество объектов в коллекции.</li>
+<li>Item(index) - возвращает элемент коллекции по имени или порядковому номеру.</li>
+<li>Append(object) - добавляет предварительно созданный объект в коллекцию.</li>
+<li>Delete(index) - удаляет элемент из коллекции по имени или порядковому номеру.</li>
+<li>Refresh() - обновляет коллекцию, чтобы отразить доступные объекты, определённые провайдером.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>NamedParameters</td>
+<td>Указывает, нужно ли передавать провайдеру имена параметров. Булево (по умолчанию - ложь). Если это свойство
+установлено в True, ADO передаёт значение имени каждого параметра в коллекции параметров. Провайдер использует имя
+параметра, чтобы установить соответствие параметрам в свойстве CommandText. Если это свойство установлено в ложь,
+имена параметров игнорируются, и провайдер использует порядок параметров, чтобы установить соответствие параметрам
+в свойстве CommandText.</td>
+</tr>
+
+<tr>
+<td>Execute(RecordsAffected, Parameters, Options)</td>
+<td>Выполняет запрос, оператор SQL, хранимую процедуру или любую другую команду, доступную провайдеру. В основном
+аналогичен методу Execute() объекта Connection (см. выше). Все параметры являются необязательными. Параметр
+"Parameters" представляет собой массив параметров типа Variant, передаваемый оператору SQL (не для выходных
+параметров).</td>
+</tr>
+
+<tr>
+<td>Cancel()</td>
+<td>Отменяет выполнение последнего асинхронного вызова Execute(), если действие ещё не завершено.</td>
+</tr>
+
+<tr>
+<td>CreateParameter(Name, Type, Direction, Size, Value)</td>
+<td>Создаёт и возвращает объект Parameter с заданными свойствами. Метод CreateParameter не добавляет созданный
+параметр к коллекции Parameters. Для этого следует использовать метод Append(objParameter) этой коллекции.
+Аргументы метода CreateParameter (все аргументы необязательные):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Name - строка, имя параметра.</li>
+<li>Type - целое число (long), тип данных параметра (строка, число, булево и т.д.). Подробнее - см. в MSDN
+значения перечисления DataTypeEnum, а также свойство Type объекта Parameter в данной статье.</li>
+<li>Direction - целое число (long), "направление" параметра. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adParamUnknown(0) - направление параметра неизвестно.</li>
+<li>adParamInput(1) - по умолчанию, входной параметр.</li>
+<li>adParamOutput(2) - выходной параметр.</li>
+<li>adParamInputOutput(3) -  параметр представляет собой и входной, и выходной параметр</li>
+<li>adParamReturnValue(4) - параметр представляет собой возвращаемое значение.</li>
+</ul>
+</li>
+<li>Size - целое число (long), максимальная длина параметра в символах или байтах.</li>
+<li>Value - Variant, значение параметра.</li>
+</ul>
+</td>
+</tr>
+
+</tbody></table>
+<br>
+</p>
+
+<p class="paragraph">
+Объект Parameter является членом коллекции Parameters и представляет собой параметр запроса с параметрами
+(например, критерий сравнения предложения WHERE оператора SELECT) или параметр хранимой процедуры. В зависимости
+от функциональных возможностей провайдера некоторые методы или свойства объекта Parameter могут быть недоступны.
+Если вы знаете имена и свойства параметров, связанных с хранимой процедурой или параметризованным запросом, вы
+можете использовать метод CreateParameter для создания объектов Parameter и метод Append() для добавления их к
+коллекции параметров. Это позволит вам не вызывать метод Refresh() коллекции параметров, чтобы отыскать информацию
+о параметрах с помощью провайдера (потенциально ресурсоёмкая операция). Свойства и методы объекта Paramrter:
+<br><br>
+<table width="100%" border="1" cellspacing="0">
+<tbody><tr><th></th><th>Описание</th></tr>
+
+<tr>
+<td>Name</td>
+<td>Строка, имя параметра. Для объектов Parameter, ещё не добавленных в коллекцию параметров, это свойство доступно
+для чтения и записи, в противном случае - только для чтения.</td>
+</tr>
+
+<tr>
+<td>Value</td>
+<td>Variant, значение параметра. Если команда содержит параметр, свойство Value которого пусто, и вы получаете
+от команды объект Recordset, вы должны закрыть Recordset перед чтением свойства Value. Иначе (для некоторых
+провайдеров) свойство Value может не содержать правильное значение.</td>
+</tr>
+
+<tr>
+<td>Attributes</td>
+<td>Содержит сумму одной или более характеристик объекта (целое число, long). Чтение и запись. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adParamSigned(16) - параметр принимает значения со знаком.</li>
+<li>adParamNullable(64) - параметр принимает пустые значения.</li>
+<li>adParamLong(128) - параметр принимает двоичные данные.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Direction</td>
+<td>Целое число (long), "направление" параметра. Возможные значения - см. описание метода CreateParameter объекта
+Command. Не все провайдеры могут определить направление параметров в их хранимых процедурах. В таких случаях вы
+должны установить свойство Direction прежде, чем выполните запрос.</td>
+</tr>
+
+<tr>
+<td>Precision</td>
+<td>Указывает степень точности для числовых значений. Целое число (byte), которое указывает максимальное число
+цифр.</td>
+</tr>
+
+<tr>
+<td>NumericScale</td>
+<td>Указывает масштаб числовых значений. Целое число (byte), которое указывает число десятичных разрядов справа
+от десятичной точки.</td>
+</tr>
+
+<tr>
+<td>Size</td>
+<td>Целое число (long), максимальная длина параметра в символах или байтах. Во многих случаях во избежание ошибок
+крайне желательно заполнить этот параметр.</td>
+</tr>
+
+<tr>
+<td>Type</td>
+<td>Целое число (long), тип данных параметра (строка, число, булево и т.д.). Подробнее - см. в MSDN значения
+перечисления DataTypeEnum. Некоторые возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adEmpty(0) - значение не задано.</li>
+<li>adSmallInt(2) - двухбайтное целое со знаком.</li>
+<li>adInteger(3) - четырёхбайтное целое со знаком.</li>
+<li>adSingle(4) - число с плавающей запятой с одинарной точностью.</li>
+<li>adDouble(5) - число с плавающей запятой с двойной точностью.</li>
+<li>adCurrency(6) - денежная сумма с фиксированной точкой с четырьмя цифрами справа от десятичной точки
+(восьмибайтное целое число со знаком).</li>
+<li>adError(10) - 32-битный код ошибки.</li>
+<li>adBoolean(11) - булево значение.</li>
+<li>adDecimal(14) -  числовое значение с фиксированной точностью и масштабом.</li>
+<li>adTinyInt(16) - однобайтное целое со знаком.</li>
+<li>adUnsignedTinyInt(17) - однобайтное целое без знака.</li>
+<li>adUnsignedSmallInt(18) - двухбайтное целое без знака.</li>
+<li>adUnsignedInt(19) - четырёхбайтное целое без знака.</li>
+<li>adBigInt(20) - восьмибайтное целое со знаком.</li>
+<li>adUnsignedBigInt(21) - восьмибайтное целое без знака.</li>
+<li>adBinary(128) - двоичное значение.</li>
+<li>adChar(129) - строковое значение.</li>
+<li>adUserDefined(132) - определяемая пользователем переменная.</li>
+<li>adDBDate(133) - дата формата yyyymmdd.</li>
+<li>adDBTime(134) - время формата hhmmss.</li>
+<li>adDBTimeStamp(135) - дата и время формата yyyymmddhhmmss плюс тысячные доли секунды.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>AppendChunk(Data)</td>
+<td>Добавляет данные в конец большого текста или двоичных данных. Параметр Data имеет тип Variant. В ситуациях,
+когда системная память ограничена, вы можете использовать метод AppendChunk для управления большими значениями по
+частям. Первый вызов AppendChunk() перезаписывает новые данные поверх любых существующих данных. Последующие вызовы
+AppendChunk() добавляют данные к существующим данным параметра. Вызов AppendChunk() с пустым значением удаляет все
+данные параметра.</td>
+</tr>
+
+<tr>
+<td>Properties</td>
+<td>Содержит коллекцию динамических свойств объекта (объектов Property). Подробнее - см. раздел "Динамические
+свойства объектов".</td>
+</tr>
+
+</tbody></table>
+<br>
+</p>
+
+<p class="paragraph">
+Пример "независимого" использования объекта Command:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objComm = CreateObject("ADODB.Command")
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objComm.ActiveConnection = ConnectString
+objComm.CommandText = "SELECT name, filename FROM sysdatabases"
+Set objRecordset = objComm.Execute
+While Not objRecordset.EOF
+    strRes = vbNullString
+    For i=0 To objRecordset.Fields.Count-1
+        strRes = strRes &amp; CStr(objRecordset.Fields(i).Value) &amp; vbTab
+    Next
+    WScript.Echo Trim(strRes)
+    objRecordset.MoveNext
+Wend
+Set objComm = Nothing
+Set objRecordset = Nothing
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Пример использования объекта Command в паре с объектом Connection:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objConn = CreateObject("ADODB.Connection")
+Set objComm = CreateObject("ADODB.Command")
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objConn.ConnectionString = ConnectString
+objConn.Open
+objComm.ActiveConnection = objConn
+objComm.CommandText = "SELECT name, filename FROM sysdatabases"
+Set objRecordset = objComm.Execute
+While Not objRecordset.EOF
+    strRes = vbNullString
+    For i=0 To objRecordset.Fields.Count-1
+        strRes = strRes &amp; CStr(objRecordset.Fields(i).Value) &amp; vbTab
+    Next
+    WScript.Echo Trim(strRes)
+    objRecordset.MoveNext
+Wend
+objConn.Close
+Set objConn = Nothing
+Set objComm = Nothing
+Set objRecordset = Nothing
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Пример получения информации о параметрах хранимой процедуры:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objComm = CreateObject("ADODB.Command")
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objComm.ActiveConnection = ConnectString
+'получаем информацию о параметрах хранимой процедуры "sp_adduser"
+objComm.CommandText = "sp_adduser"
+objComm.CommandType = 4
+For Each Param In objComm.Parameters
+    WScript.Echo "Name = " &amp; Param.Name
+    WScript.Echo "Attributes = " &amp; Param.Attributes
+    WScript.Echo "Direction = " &amp; Param.Direction
+    WScript.Echo "Size = " &amp; Param.Size
+    WScript.Echo "Type = " &amp; Param.Type
+    WScript.Echo
+Next
+Set objComm = Nothing
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Пример исполнения хранимой процедуры с параметрами - упаковка файла в CAB-архив средствами SQL-сервера:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objComm = CreateObject("ADODB.Command")
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objComm.ActiveConnection = ConnectString
+'упаковка файла "C:\boot.ini" в cab-архив
+objComm.CommandText = "xp_makecab"
+objComm.CommandType = 4
+objComm.Parameters.Append objComm.CreateParameter(,129,,11,"C:\boot.cab")
+objComm.Parameters.Append objComm.CreateParameter(,129,,5,"mszip")
+objComm.Parameters.Append objComm.CreateParameter(,17,,,0)
+objComm.Parameters.Append objComm.CreateParameter(,129,,11,"C:\boot.ini")
+objComm.Execute
+Set Param = Nothing
+Set objComm = Nothing
+</pre>
+</span>
+</p>
+
+<h2 style="text-indent: 1.3em;"><a name="RecordsetObject">Объект Recordset</a></h2>
+
+<p class="paragraph">
+Объект Recordset создаётся следующим образом:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+Set objConn = CreateObject("ADODB.Recordset")
+</span>
+<br><br>
+После этого вы можете вызывать и использовать методы и свойства этого объекта. Объект Recordset состоит из записей
+и полей. Не все свойства объекта поддерживаются всеми провайдерами.
+</p>
+
+<p class="paragraph">
+При открытии набора записей (Recordset'а) вы должны определить тип используемого курсора. В библиотеке ADO определены
+четыре типа курсоров:
+</p><ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Динамический курсор (Dynamic cursor). Позволяет видеть данные, добавленные, изменённые и удалённые другими
+пользователями. Допускает все типы переходов по набору записей, а также использование закладок, если это позволяет
+провайдер.</li>
+<li>Курсор набора данных (Keyset cursor). Позволяет видеть данные, изменённые другими пользователями. Допускает все
+типы переходов по набору записей, а также использование закладок, если это позволяет провайдер.</li>
+<li>Статический курсор (Static cursor). Позволяет получить копию набора записей для создания отчёта. Допускает все
+типы переходов по набору записей, а также использование закладок, если это позволяет провайдер.</li>
+<li>Курсор Forward-only (Forward-only cursor). Аналогичен предыдущему, но позволяет проходить через набор записей
+только вперёд. Обеспечивает максимальную производительность.</li>
+</ul>
+<p></p>
+
+<p class="paragraph">
+Чтобы открыть набор записей в одном из рассмотренных четырёх режимов, необходимо задать соответствующее значение
+свойству CursorType или параметру CursorType метода Open. Не все провайдеры поддерживают все типы курсоров. По
+умолчанию используется курсор типа Forward-only.
+</p>
+
+<p class="paragraph">
+При открытии объекта Recordset текущей записью становится первая запись, а свойства EOF и BOF получают значение
+False.
+</p>
+
+<p class="paragraph">
+Объект Recordset предусматривает два типа обновлений: немедленное и пакетное. В первом случае все изменения данных
+немедленно записываются в базу после вызова метода Update(). Во втором случае (если тип блокировки для Recordset -
+adLockBatchOptimistic(4), режим обновления будет пакетным) несколько обновлённых строк может помещаться в локальный
+буфер, после чего реализуется одновременное обновление нескольких полей источника данных с помощью метода
+UpdateBatch().
+</p>
+
+<p class="paragraph">
+Свойства и методы объекта Recordset:
+<br><br>
+<table width="100%" border="1" cellspacing="0">
+<tbody><tr><th></th><th>Описание</th></tr>
+
+<tr>
+<td>ActiveConnection</td>
+<td>Содержит объект Connection, к которому привязан данный Recordset, или строку параметров подключения
+(ConnectionString).</td>
+</tr>
+
+<tr>
+<td>ActiveCommand</td>
+<td>Содержит объект Command, который породил данный Recordset. Только чтение. Если объект Command не использовался,
+пусто.</td>
+</tr>
+
+<tr>
+<td>Source</td>
+<td>Содержит источник данных объекта Recordset. Это ссылка на объект Command, оператор SQL, имя таблицы или
+хранимой процедуры. Свойству можно задать значение только при закрытом в данный момент объекте Recordset.</td>
+</tr>
+
+<tr>
+<td>Filter</td>
+<td>Содержит фильтр данных. Может принимать значения трёх типов:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Строка, составленная из одного или более индивидуальных предложений с операторами AND или OR, например
+"LastName = 'Smith' AND FirstName = 'John'".</li>
+<li>Массив закладок - уникальных значений Bookmark.</li>
+<li>Одно из значений перечисления FilterGroupEnum (подробнее - см. MSDN).</li>
+</ul>
+Используйте это свойство для выборочного сканирования объекта Recordset. Установка свойства переместит курсор на
+первую запись, которая удовлетворяет фильтру.
+</td>
+</tr>
+
+<tr>
+<td>CursorType</td>
+<td>Содержит тип курсора. Может быть изменено только до открытия объекта Recordset. Возможные значения - см.
+описание аргумента CursorType события WillExecute объекта Connection.</td>
+</tr>
+
+<tr>
+<td>LockType</td>
+<td>Содержит тип блокировки для объекта Recordset. Доступно для записи при закрытом объекте Recordset. Возможные
+значения - см. описание аргумента LockType события WillExecute объекта Connection.</td>
+</tr>
+
+<tr>
+<td>MaxRecords</td>
+<td>Используйте это свойство, чтобы ограничить количество записей, которые возвращает провайдер в результате
+запроса к источнику данных. По умолчанию - 0, что означает, что провайдер возвращает все требуемые записи.</td>
+</tr>
+
+<tr>
+<td>State</td>
+<td>Содержит состояние объекта. Возможные значения - см. описание свойства State объекта Command.</td>
+</tr>
+
+<tr>
+<td>CacheSize</td>
+<td>Устанавливает количество записей объекта Recordset (обязательно больше 0), которые кэшируются (локально) в
+памяти. Значение по умолчанию 1. Например, если CacheSize = 10, после открытия объекта Recordset провайдер помещает
+первые 10 записей в локальную память. По мере того, как вы двигаетесь по записям объекта Recordset, провайдер
+возвращает данные из локального буфера памяти. Как только вы минуете последнюю запись в кэше, провайдер помещает
+следующие 10 записей из источника данных в кэш. Записи в кэше не отражают изменения, которые делают другие
+пользователи. Чтобы вызвать модификацию всех кэшируемых данных, используйте метод Resync().
+</td>
+</tr>
+
+<tr>
+<td>Open(Source, ActiveConnection, CursorType, LockType, Options)</td>
+<td>Открывает курсор. Все параметры необязательные. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Source - может принимать следующие значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Ссылка на объект Command.</li>
+<li>Строка с оператором SQL, именем таблицы или хранимой процедуры.</li>
+<li>Имя файла с сохранённым набором записей.</li>
+</ul>
+</li>
+<li>ActiveConnection - ссылка на объект Connection или строка параметров подключения (ConnectionString).</li>
+<li>CursorType - тип курсора. Возможные значения - см. описание аргумента CursorType события WillExecute объекта
+Connection.</li>
+<li>LockType - тип блокировки записей. Возможные значения - см. описание аргумента LockType события WillExecute
+объекта Connection.</li>
+<li>Options - целое число (long), определяющее тип команды. Возможные значения (значения можно суммировать):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adCmdText(1) - текстовое определение команды или хранимой процедуры.</li>
+<li>adCmdTable(2) - создать SQL-запрос, который вернёт все строки указанной таблицы.</li>
+<li>adCmdStoredProc(4) - хранимая процедура.</li>
+<li>adCmdUnknown(8) - тип команды неизвестен (по умолчанию).</li>
+<li>adAsyncExecute(16) - асинхронное выполнение команды. Нельзя сочетать с adCmdTableDirect(512).</li>
+<li>adAsyncFetch(32) - строки, не находящиеся в кеше (размер кеша определяется свойством CacheSize), будут выбраны
+асинхронно.</li>
+<li>adAsyncFetchNonBlocking(64) - никогда не осуществлять блокировки при поиске.</li>
+<li>adCmdFile(256) - имя файла с сохранённым набором записей.</li>
+<li>adCmdTableDirect(512) - создать SQL-запрос, который вернёт все строки указанной таблицы. Позволяет использовать
+метод Seek() в паре со свойством Index (в данной статье не рассматриваются), если используется курсор на стороне
+сервера.</li>
+</ul>
+</li>
+</ul>
+По умолчанию Recordset будет открыт с курсором forward-only read-only на стороне сервера.
+</td>
+</tr>
+
+<tr>
+<td>Close()</td>
+<td>Закрывает объект Recordset. Если вы закрываете объект Recordset в пакетном режиме модификации, все изменения
+после последнего вызова UpdateBatch() будут потеряны.</td>
+</tr>
+
+<tr>
+<td>RecordCount</td>
+<td>Содержит количество записей в объекте Recordset. Если провайдер или тип курсора не поддерживает данное свойство,
+содержит -1.</td>
+</tr>
+
+<tr>
+<td>Requery(Options)</td>
+<td>Обновляет данные в объекте Recordset путём повторного выполнения запроса. Эквивалентно вызову Close(), а затем
+Open(). Возможные значения параметра Options - см. описание аргумента Options метода Open() объекта Recordset.</td>
+</tr>
+
+<tr>
+<td>Resync(AffectRecords, ResyncValues)</td>
+<td>Обновляет данные в объекте Recordset. Не выполняет повторного запроса к базе данных, поэтому вновь добавленные
+записи не будут видны. Если существующие записи были удалены из базы данных, произойдёт ошибка. Этот метод обычно
+используют со статическим курсором или курсором типа Forward-only, чтобы видеть изменения, внесённые в базу
+данных. Параметры (все параметры необязательные):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>AffectRecords - определяет записи, на которые воздействует метод. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adAffectCurrent(1) - обновляет только текущую запись.</li>
+<li>adAffectGroup(2) - обновляет все записи, удовлетворяющие фильтру, заданному свойством Filter (например, если
+Filter - массив "закладок").</li>
+<li>adAffectAll(3) - по умолчанию. Обновляет все записи. Однако, если свойство Filter содержит строку типа
+"Author ='Smith'", то операция затронет только часть записей.</li>
+<li>adAffectAllChapters(4) - обновляет все записи.</li>
+</ul>
+</li>
+<li>ResyncValues - определяет возможность перезаписи значений основной таблицы. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adResyncAllValues(2) - по умолчанию. Осуществляет перезапись данных с отменой отложенных обновлений.</li>
+<li>adResyncUnderlyingValues(1) - изменённые данные не перезаписываются и отложенные обновления не отменяются.</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Save(FileName, PersistFormat)</td>
+<td>Сохраняет набор записей в файл или объект Stream (не рассматривается в данной статье). Может быть вызван только
+для открытого набора записей. После вызова метода текущей становится первая строка набора записей. Параметры (все
+параметры необязательные):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>FileName - полное имя файла, в котором будет сохранён набор записей, или ссылка на объект Stream. По умолчанию
+используется свойство Source как имя файла. В принципе, сюда можно поместить ссылку на любой объект, который
+поддерживает OLE DB IStream интерфейс, например, MSXML DOM object ("MSXML.DOMDocument").</li>
+<li>PersistFormat - формат, в котором будет сохранён набор записей. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adPersistADTG(0) - по умолчанию. Формат Microsoft Advanced Data TableGram (ADTG).</li>
+<li>adPersistXML(1) - специфический формат XML ADO в кодировке UTF-8.</li>
+<li>adPersistProviderSpecific(2) - собственный формат провайдера.</li>
+</ul>
+</li>
+</ul>
+Если установлено свойство Filter, будут сохранены только записи, удовлетворяющие фильтру.
+</td>
+</tr>
+
+<tr>
+<td>Clone(LockType)</td>
+<td>Возвращает копию исходного объекта Recordset. Необязательный параметр LockType определяет тип блокировки:
+как у оригинала или только для чтения. Допустимые значения - adLockUnspecified(-1) или adLockReadOnly(1).
+Использование метода Clone() более эффективно, чем создание и открытие нового объекта Recordset с теми же
+параметрами. Свойство Filter оригинала не будет применено к клону. Текущей записью только что созданного клона
+будет первая. Изменения, которые вы делаете в оригинальном объекте Recordset, видимы во всех его клонах независимо
+от типа курсора. Однако после того, как вы выполните метод Requery() на оригинале, клоны больше не будут
+синхронизированы с оригиналом. Закрытие оригинала не закрывает копии.  Значения закладок (Bookmark) взаимозаменяемы
+для оригинала и клонов. Некоторые события объекта Recordset (объект Recordset имеет события - в данной статье они не
+рассматриваются) будут происходить одновременно для всех клонов. Однако, поскольку текущая запись оригинала может
+отличаться от текущей записи клона, события могут быть неверно обработаны для клона.</td>
+</tr>
+
+<tr>
+<td>BOF<br>EOF</td>
+<td>Если свойство BOF содержит True, текущая запись (курсор) находится перед первой записью в объекте Recordset.
+Если свойство EOF содержит True, текущая запись (курсор) находится после последней записи в объекте Recordset. При
+открытии пустого объекта Recordset оба этих свойства содержат True.</td>
+</tr>
+
+<tr>
+<td>Move(NumRecords, Start)</td>
+<td>Передвигает позицию текущей записи в наборе записей. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>NumRecords - целое число (long), количество записей, на которое перемещается позиция. При использовании
+отрицательных значений позиция передвигается назад.</li>
+<li>Start - необязательный. Может быть закладкой, с которой начинается отсчёт (см. свойство Bookmark). Другие
+возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adBookmarkCurrent(0) - от текущей записи (по умолчанию).</li>
+<li>adBookmarkFirst(1) - от первой записи.</li>
+<li>adBookmarkLast(2) - от последней записи.</li>
+</ul>
+</li>
+</ul>
+Вызов метода для пустого набора записей приведёт к ошибке.
+</td>
+</tr>
+
+<tr>
+<td>MoveFirst()<br>MoveLast()<br>MoveNext()<br>MovePrevious()</td>
+<td>Передвигают позицию текущей записи соответственно на первую, последнюю, следующую или предыдущую запись. Вызов
+MoveFirst() в объекте Recordset типа forward-only может заставить провайдера заново выполнить команду, которая
+сгенерировала этот Recordset.</td>
+</tr>
+
+<tr>
+<td>AbsolutePosition</td>
+<td>При установке перемещает курсор на запись под данным номером. Доступно не для всех видов курсоров. Значение
+в интервале с 1 по RecordCount. Свойство поддерживается не всеми провайдерами.</td>
+</tr>
+
+<tr>
+<td>Bookmark</td>
+<td>Закладка в виде числа. Доступно не для всех видов курсоров. Никак не связана с номером записи. Можно при
+проходе по таблице запомнить значение Bookmark во временной переменной, а затем вернуться обратно на данную
+запись путём установки свойства из этой переменной. Закладка уникально идентифицирует запись. Тип данных закладки
+определяется провайдером и воспринимается ADO как Variant.</td>
+</tr>
+
+<tr>
+<td>PageSize</td>
+<td>Задаёт число записей на странице. По умолчанию - 10. Доступно не для всех видов курсоров.</td>
+</tr>
+
+<tr>
+<td>PageCount</td>
+<td>Содержит количество страниц. Автоматически пересчитывается при изменении PageSize. Доступно не для всех видов
+курсоров.</td>
+</tr>
+
+<tr>
+<td>AbsolutePage</td>
+<td>При установке перемещает курсор на начало данной страницы. Доступно не для всех видов курсоров. Значение
+в интервале с 1 по PageCount. Свойство поддерживается не всеми провайдерами.</td>
+</tr>
+
+<tr>
+<td>Delete(AffectRecords)</td>
+<td>Удаляет текущую запись или группу записей. Если объект Recordset не допускает удаления записей, произойдёт
+ошибка. Если вы находитесь в пакетном режиме модификации, фактическое удаление происходит при вызове UpdateBatch().
+Вы можете отменить удаление вызовом CancelBatch(). Параметр AffectRecords (необязательный) может принимать
+значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adAffectCurrent(1) - удаляется текущая запись (по умолчанию).</li>
+<li>adAffectGroup(2) - удаляются все записи, удовлетворяющие фильтру, заданному свойством Filter.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>AddNew(Fields, Values)</td>
+<td>Добавляет запись с указанными значениями полей в конец объекта Recordset и делает её текущей. Параметры (все
+параметры необязательные):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Fields - имя поля или массив имён полей, для которых задаются значения.</li>
+<li>Values - значение поля или массив значений полей.</li>
+</ul>
+Чтобы сохранить добавленную запись, необходимо вызвать метод Update(). При непосредственном режиме модификации,
+если вы передаете параметры Fieldlist и Values, ADO немедленно отправляет новую запись в базу данных (вызов
+Update() не нужен). В пакетном режиме модификации для сохранения записи в базе данных нужно вызвать метод
+UpdateBatch().
+</td>
+</tr>
+
+<tr>
+<td>Update(Fields, Values)</td>
+<td>Сохраняет любые изменения текущей записи объекта Recordset. Параметры (все параметры необязательные):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Fields - имя поля или массив имён полей, в которых следует сохранить изменения.</li>
+<li>Values - значение поля или массив значений полей.</li>
+</ul>
+Если курсор перемещён с добавленной или изменённой записи, метод вызывается автоматически.
+</td>
+</tr>
+
+<tr>
+<td>CancelUpdate()</td>
+<td>Отменяет любые изменения или добавления записей, проведённые до использования метода Update().</td>
+</tr>
+
+<tr>
+<td>UpdateBatch(AffectRecords, PreserveStatus)</td>
+<td>Для пакетного режима модификации: записывает все изменения объекта Recordset в базу данных. Только для
+курсоров Keyset или Static. Если вызов метода привёл к ошибкам из-за конфликта с основными данными (например,
+запись была уже удалена другим пользователем), используйте коллекцию Errors и обрабатывайте ошибки времени
+выполнения (run-time errors). Используйте свойства Filter и Status, чтобы определить местонахождение
+записей с конфликтами. Чтобы отменить все ожидающие разрешения пакетные модификации, используйте метод
+CancelBatch(). Порядок, в котором модификации выполняются на источнике данных, не обязательно тот же,
+в котором эти модификации были выполнены в текущем объекте Recordset. Параметры (все параметры необязательные):
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>AffectRecords - указывает, какие записи затронет метод. Возможные значения - см. описание аргумента
+AffectRecords метода Resync().</li>
+<li>PreserveStatus - если установлено в True, свойство Status каждой записи остаётся неизменным.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>CancelBatch(AffectRecords)</td>
+<td>Отменяет любые ожидающие разрешения модификации в пакетном режиме модификации. Обработка ошибок аналогична
+методу UpdateBatch(). Необязательный параметр AffectRecords указывает, какие записи затронет метод. Возможные
+значения - см. описание аргумента AffectRecords метода Resync().</td>
+</tr>
+
+<tr>
+<td>Status</td>
+<td>Содержит статус текущей записи относительно пакетных модификаций или других объёмных операций. Возможные
+значения - см. в MSDN описание перечисления RecordStatusEnum.</td>
+</tr>
+
+<tr>
+<td>SetAllRowStatus(recStatus)</td>
+<td>Устанавливает свойство Status всех записей к указанному значению. Единственное допустимое значение аргумента
+recStatus - adRecNew(1) - указывает, что запись новая.</td>
+</tr>
+
+<tr>
+<td>EditMode</td>
+<td>Содержит состояние редактирования текущей записи (был ли вызван метод Update() или UpdateBatch() для сохранения
+изменений). Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adEditNone(0) - редактирование не проводилось.</li>
+<li>adEditInProgress(1) - редактирование проводилось, но изменения не сохранены.</li>
+<li>adEditAdd(2) - текущая запись добавлена с помощью метода AddNew(), но ещё не сохранена.</li>
+<li>adEditDelete(4) - текущая запись была удалена.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Cancel()</td>
+<td>Отменяет последний асинхронный вызов Open(), если процесс ещё не завершён.</td>
+</tr>
+
+<tr>
+<td>Fields</td>
+<td>Содержит коллекцию полей (объектов Field). Свойства и методы коллекции - см. раздел "Коллекция полей
+Fields".</td>
+</tr>
+
+<tr>
+<td>Properties</td>
+<td>Содержит коллекцию динамических свойств объекта (объектов Property). Подробнее - см. раздел "Динамические
+свойства объектов". Доступно для открытого объекта Recordset.</td>
+</tr>
+
+<tr>
+<td>CursorLocation</td>
+<td>Определяет расположение курсора (на сервере или на клиенте). Доступно для установки только до осуществления
+подключения к источнику данных. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adUseNone(1) - не использовать курсор (устарело; только ради совместимости).</li>
+<li>adUseServer(2) - по умолчанию. Курсор на стороне сервера.</li>
+<li>adUseClient(3) - курсор на стороне клиента. Может обеспечивать дополнительные возможности (например,
+сортировку).</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Sort</td>
+<td>Строка, содержащая одно или более имен полей, по которым следует отсортировать Recordset, и порядок сортировки
+(по возрастанию или по убыванию). Каждое имя поля отделяется запятой и произвольно сопровождается пробелом и
+ключевым словом ASC, которое сортирует в возрастающем порядке, или DESC, которое сортирует по убыванию. По
+умолчанию сортировка происходит в возрастающем порядке. Это свойство требует, чтобы свойство CursorLocation было
+установлено в adUseClient(3). Это свойство имеет приоритет перед предложением ORDER BY, включенным в инструкцию
+SQL. Установка свойства к пустой строке сбросит строки к их первоначальному порядку.</td>
+</tr>
+
+<tr>
+<td>CompareBookmarks(Bookmark1, Bookmark2)</td>
+<td>Сравнивает относительную позицию двух закладок (см. свойство Bookmark) и возвращает результат сравнения.
+Возвращаемые значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adCompareLessThan(0) - первая закладка перед второй.</li>
+<li>adCompareEqual(1) - закладки равны.</li>
+<li>adCompareGreaterThan(2) - первая закладка после второй.</li>
+<li>adCompareNotEqual(3) - закладки не равны и не упорядочены.</li>
+<li>adCompareNotComparable(4) - закладки не могут быть сравнены.</li>
+</ul>
+Закладки должны принадлежать одному и тому же объекту Recordset, или его клону.
+</td>
+</tr>
+
+<tr>
+<td>NextRecordset(RecordsAffected)</td>
+<td>Используйте этот метод, чтобы получить результаты следующей команды в составной инструкции, которая возвращает
+множественные результаты. Если вы открываете объект Recordset, основанный на составной инструкции (например,
+"SELECT * FROM table1; SELECT * FROM table2"), использование метода Open() возвращает результаты только первой
+команды. Если результатов следующей команды нет, Recordset будет установлен в Nothing. При непосредственном режиме
+модификации перед использованием метода NextRecordset следует вызвать Update() или CancelUpdate(), т.к. модификации
+должны быть завершены. Метод возвращает объект Recordset. В необязательном параметре RecordsAffected возвращается
+число записей, затронутых операцией.</td>
+</tr>
+
+<tr>
+<td>Supports(CursorOptions)</td>
+<td>Определяет, поддерживает ли текущий курсор Recordset специфический тип функциональных возможностей и возвращает
+булево значение. Параметр CursorOptions состоит из одного или более значений:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adAddNew(0x1000400) - поддерживает метод AddNew() для добавления записей.</li>
+<li>adApproxPosition(0x4000) - поддерживает свойства AbsolutePosition и AbsolutePage.</li>
+<li>adBookmark(0x2000) - поддерживает свойство Bookmark.</li>
+<li>adDelete(0x1000800) - поддерживает метод Delete() для удаления записей.</li>
+<li>adFind(0x80000) - поддерживает метод Find() для определения местонахождения строки в Recordset.</li>
+<li>adHoldRecords(0x100) - отыскивает записи или изменяет позицию, не передавая все ожидающие разрешения
+изменения.</li>
+<li>adIndex(0x100000) - поддерживает свойство Index.</li>
+<li>adMovePrevious(0x200) - поддерживает методы MoveFirst() и MovePrevious(), методы Move() и GetRows() для
+перемещения текущей позиции назад, не требуя закладок.</li>
+<li>adNotify(0x40000) - указывает, что провайдер данных поддерживает события объекта Recordset (в данной статье
+события не рассматриваются).</li>
+<li>adResync(0x20000) - поддерживает метод Resync.</li>
+<li>adSeek(0x200000) - поддерживает метод Seek() для определения местонахождения строки в Recordset.</li>
+<li>adUpdate(0x1008000) - поддерживает метод Update().</li>
+<li>adUpdateBatch(0x10000) - поддерживает методы UpdateBatch() и CancelBatch().</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Find(Criteria, SkipRows, SearchDirection, Start)</td>
+<td>Ищет в Recordset строку, которая удовлетворяет указанным критериям. Если строка найдена, она становится
+текущей. Иначе, текущая позиция устанавливается на конец (или начало) Recordset. Перед вызовом метода текущая
+позиция должна быть установлена. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Criteria - строка, которая содержит инструкцию, определяющую имя столбца, оператор сравнения и значение. Может
+быть определено имя только единственного столбца. Оператором сравнения может быть &lt;, &gt;, =, &lt;=, &gt;=,
+&lt;&gt; или "like". Значение может быть строкой, числом с плавающей запятой или датой. Cтроки берутся в одинарные
+кавычки или # (знаки номера). Даты ограничиваются знаками номера и могут содержать часы, минуты и секунды, но не
+миллисекунды. Для оператора "like" значение строки может содержать звездочку (*). Звездочка может использоваться
+только в конце строки значения, или в начале и конце строки одновременно, и никак иначе. Пример: "start_date &gt;
+#7/22/97#".</li>
+<li>SkipRows - необязательный. Целое число (long), значение по умолчанию которого является нулевым, которое
+определяет смещение строки от текущей строки или закладки Start (см. ниже), чтобы начать поиск. По умолчанию, поиск
+начнётся с текущей строки.</li>
+<li>SearchDirection - необязательный. Определяет направление поиска. Возможные значения:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>adSearchBackward(-1) - Поиск назад. Если соответствие не найдено, указатель текущей записи будет установлен в
+BOF.</li>
+<li>adSearchForward(1) - Поиск вперёд. Если соответствие не найдено, указатель текущей записи будет установлен в
+EOF.</li>
+</ul>
+</li>
+<li>Start - необязательный. Закладка (Bookmark), которая используется как начальная позиция для поиска.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>GetRows(Rows, Start, Fields)</td>
+<td>Помещает записи объекта Recordset в массив. Возвращает двумерный массив. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Rows - необязательный. Единственно возможное значение и значение по умолчанию - adGetRowsRest(-1). Отыскивает
+все записи Recordset от текущей позиции или от закладки, указанной параметром Start.</li>
+<li>Start - необязательный. Закладка (Bookmark), которая используется как начальная позиция для поиска.</li>
+<li>Fields - необязательный. Имя или порядковая позиция поля, либо массив имен или порядковых позиций полей. ADO
+возвращает только данные из этих полей.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>GetString(StringFormat, NumRows, ColumnDelimiter, RowDelimiter, NullExpr)</td>
+<td>Возвращает Recordset как строку. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>StringFormat - формат строки. Единственно возможное значение - adClipString(2) - разграничивает строки, столбцы
+и пустые значения с помощью параметров RowDelimiter, ColumnDelimiter и NullExpr.</li>
+<li>NumRows - необязательный. Число строк, которые будут возвращены из Recordset. Если NumRows не определён или
+превышает общее количество строк в Recordset, будут возвращены все строки.</li>
+<li>ColumnDelimiter - необязательный. Разделитель столбцов. Если не определено, cимвол табуляции.</li>
+<li>RowDelimiter - необязательный. Разделитель строк. Если не определено, символ возврата каретки.</li>
+<li>NullExpr - необязательный. Выражение, используемое вместо пустого значения (Null). Если не определено, пустая
+строка.</li>
+</ul>
+</td>
+</tr>
+
+</tbody></table>
+<br>
+</p>
+
+<h2 style="text-indent: 1.3em;">Коллекция полей Fields</h2>
+
+<p class="paragraph">
+Коллекция полей Fields является свойством объекта Recordset и поддерживает следующие свойства и методы:
+<br><br>
+<table width="100%" border="1" cellspacing="0">
+<tbody><tr><th></th><th>Описание</th></tr>
+
+<tr>
+<td>Count</td>
+<td>Содержит количество объектов в коллекции.</td>
+</tr>
+
+<tr>
+<td>Item(index)</td>
+<td>Возвращает элемент коллекции по имени или порядковому номеру.</td>
+</tr>
+
+<tr>
+<td>Append(Name, Type, DefinedSize, Attrib)</td>
+<td>Создаёт и добавляет новый объект Field в коллекцию. Поля следует добавлять к закрытому Recordset'у. Параметры:
+<ul style="text-indent: 0em; margin-top: 5px; margin-bottom: 5px;">
+<li>Name - уникальное имя поля.</li>
+<li>Type - тип поля. Возможные значения - см. описание свойства "Type" объекта "Parameter".</li>
+<li>DefinedSize - необязательный. Размер поля в символах или байтах.</li>
+<li>Attrib - необязательный. Атрибуты поля. Возможные значения - см. в MSDN описание перечисления
+FieldAttributeEnum.</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td>Delete(Field)</td>
+<td>Удаляет объект Field из коллекции, что соответствует удалению поля из набора записей. Параметр Field задаёт
+имя объекта Field или его порядковый номер. Метод может использоваться только для закрытого набора записей.</td>
+</tr>
+
+</tbody></table>
+<br>
+</p>
+
+<h2 style="text-indent: 1.3em;">Объект Field</h2>
+
+<p class="paragraph">
+Объект Field представляет собой столбец данных одного типа, т.е. поле набора записей. Кроме того, объект Field
+может представлять собой поле единичной записи (объекта Record, который не рассматривается в данной статье).
+Свойства объекта Field:
+<br><br>
+<table width="100%" border="1" cellspacing="0">
+<tbody><tr><th></th><th>Описание</th></tr>
+
+<tr>
+<td>Name</td>
+<td>Содержит имя поля.</td>
+</tr>
+
+<tr>
+<td>Value</td>
+<td>Содержит значение поля.</td>
+</tr>
+
+<tr>
+<td>OriginalValue</td>
+<td>Содержит значение поля после последнего вызова Update() или UpdateBatch(). Это то значение, которое используют
+методы CancelUpdate() и CancelBatch().</td>
+</tr>
+
+<tr>
+<td>UnderlyingValue</td>
+<td>Содержит текущее значение поля из источника данных.</td>
+</tr>
+
+<tr>
+<td>DefinedSize</td>
+<td>Содержит максимальный размер поля.</td>
+</tr>
+
+<tr>
+<td>ActualSize</td>
+<td>Содержит размер фактического значения поля.</td>
+</tr>
+
+<tr>
+<td>Type</td>
+<td>Содержит тип поля. Возможные значения - см. описание свойства "Type" объекта "Parameter".</td>
+</tr>
+
+<tr>
+<td>Precision</td>
+<td>Содержит степень точности для числовых значений поля (максимальное количество цифр).</td>
+</tr>
+
+<tr>
+<td>NumericScale</td>
+<td>Содержит масштаб числовых значений поля (количество десятичных знаков справа от запятой).</td>
+</tr>
+
+<tr>
+<td>Properties</td>
+<td>Содержит коллекцию динамических свойств объекта (объектов Property). Подробнее - см. раздел "Динамические
+свойства объектов".</td>
+</tr>
+
+</tbody></table>
+<br>
+</p>
+
+<p class="paragraph">
+Пример "независимого" использования объекта Recordset:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objRecordset = CreateObject("ADODB.Recordset")
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objRecordset.ActiveConnection = ConnectString
+objRecordset.Source = "SELECT name, filename FROM sysdatabases"
+objRecordset.Open
+While Not objRecordset.EOF
+    strRes = vbNullString
+    For i=0 To objRecordset.Fields.Count-1
+        strRes = strRes &amp; CStr(objRecordset.Fields(i).Value) &amp; vbTab
+    Next
+    WScript.Echo Trim(strRes)
+    objRecordset.MoveNext
+Wend
+objRecordset.Close
+Set objRecordset = Nothing
+</pre>
+</span>
+</p>
+
+<p class="paragraph">
+Сохранение данных Recordset в формате XML:
+<br><br>
+<span style="color: navy; font-weight: bold;">
+<pre>Set objRecordset = CreateObject("ADODB.Recordset")
+ServerName = "(local)" 'имя или IP-адрес сервера
+DSN = "master" 'имя базы данных
+UID = "sa" 'логин пользователя SQL-сервера
+PWD = "111" 'пароль пользователя SQL-сервера
+ConnectString = "Provider=SQLOLEDB;" &amp; _
+                "Data Source=" &amp; ServerName &amp; _
+                ";Initial Catalog=" &amp; DSN &amp; _
+                ";UID=" &amp; UID &amp; ";PWD=" &amp; PWD
+objRecordset.Open "SELECT name, filename FROM sysdatabases", ConnectString
+objRecordset.Save "C:\test.xml", 1
+objRecordset.Close
+Set objRecordset = Nothing
+</pre>
+</span>
+</p>
+
+<p style="text-align: right;">
+<small><a href="http://www.script-coding.info/resume.html">Людоговский Александр</a></small>
+</p>
+
+<p><a href="http://www.script-coding.info/index.html">Перейти на главную страничку сайта (список статей, файлы для скачивания)</a></p>
+
+<p><small>© 2007 <a href="http://www.script-coding.info/">http://www.script-coding.info</a> При любом использовании материалов сайта обязательна <b>ссылка</b> на него как на источник информации, а также сохранение <b>целостности</b> и <b>авторства</b> материалов.</small>
+
+</p><hr>
+
+Предложение для строительных компаний: <a href="http://www.spetsmash.ru/" target="_blank">аренда автобетононасоса</a> в Москве!. <a href="http://www.dverifortrez.ru/" target="_blank">Межкомнатные двери массив</a> только из натуральных пород дерева у нас! Купите их скорее!
+</body></html>
