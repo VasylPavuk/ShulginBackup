@@ -7,6 +7,7 @@ function BackupClass(configuration)
 {
 	this.configuration = configuration; // configuration
 	this.messages = new Array(); 		// the list of plain messages
+	this.messageType={'information': 1, 'warinng': 2, 'error': 3};
 	this.fails = 0;						// amount of failed operations during backup process
 	this.FSO = new ActiveXObject('Scripting.FilesystemObject');
 	this.connADO = new ActiveXObject('ADODB.Connection');
@@ -55,7 +56,7 @@ function BackupClass(configuration)
 */
 	this.logMessage = function(message, type)
 	{
-		message = formatDateTime(new Date())+': '+message;
+		message = [formatDateTime(new Date()), message, type];
 		this.messages.push(message);
 		WScript.Echo(message);
 	}
@@ -80,7 +81,7 @@ function BackupClass(configuration)
 					}
 					catch(err)
 					{
-						this.logMessage(err.description+' during folder creation '+currentFolder, 'error');
+						this.logMessage(err.description+' during folder creation '+currentFolder, this.messageType['error']);
 						return false;
 					}
 			}
@@ -120,13 +121,46 @@ function BackupClass(configuration)
 */
 	this.checkDatabaseExists = function (databaseName)
 	{
-		var checkQuery = "select db_id('"+databaseName+"') databaseId";
+		var checkQuery = "select db_id('"+databaseName+"') as databaseId";
 		var rs = this.connADO.Execute(checkQuery);
 		var result = String(rs('databaseId'));
 		if(result=='null')
 			return 0;
 		return parseInt(result);
 	}
+/*
+	function "getRecoveryModel" returns recovery model of database
+	parameters:
+		databaseName: the name of database to be checked
+	returns:
+		1:	FULL
+		2:	BULK_LOGGED
+		3:	SIMPLE
+*/
+	this.getRecoveryModel = function(databaseName)
+	{
+		var query = "select [recovery_model] from sys.databases where [name] = '"+databaseName+"';";
+		var rs = this.connADO.Execute(query);
+		return parseInt(rs('recovery_model'));
+	}
+/*
+	function "lastBackupDate" returns days past since last backup
+	parameters:
+		databaseName: the name of database to be checked
+		backupType: type of backup that checked
+	returns: number of days sicne last backup
+*/
+	this.lastBackupDate = function(databaseName, backupType)
+	{
+		var query = "exec sp_executesql\n\
+			@stmt = N'select  datediff(day, max([backup_finish_date]), getdate()) [days_past]\n\
+			from    [msdb].[dbo].[backupset]\n\
+			where   [database_name] = @DatabaseName and [type] = @BackupType;',\n\
+			@params = N'@DatabaseName sysname, @BackupType nchar(1)', @databaseName = N'"+databaseName+"', @backupType = N'"+backupType+"'";
+		WScript.Echo(query);
+		var rs = this.connADO.Execute(query);
+		return parseInt(rs('days_past'));
+	}		
 /*
 	function "backupDatabase" performs single database backup
 	parameters:
@@ -139,13 +173,15 @@ function BackupClass(configuration)
 		if(this.checkDatabaseExists(databaseName) > 0)
 		{
 			var backupDate = new Date(), backupFolder, backupFile, backupCommand;
-			backupFolder = this.configuration.sql.backupFolder;
+			backupFolder = this.FSO.BuildPath(this.configuration.sql.backupFolder, formatDateTime(backupDate).substr(0, 10));
 			if(!this.createFolder(backupFolder))
 			{
-				this.logMessage('Failed to create folder: '+backupFolder);
+				this.logMessage('Failed to create folder: '+backupFolder, this.messageType['error']);
 				return;
 			}
-			this.logMessage('Backup database ['+databaseName+"] type="+backupType, 'information');
+			this.logMessage('Backup database ['+databaseName+"] type="+backupType, this.messageType['information']);
+			var lastBackupDate = this.lastBackupDate(databaseName, 'D');
+			WScript.Echo(databaseName + '\t' + lastBackupDate);
 			switch(backupType.toLowerCase())
 			{
 				case 	'full':
@@ -154,29 +190,35 @@ function BackupClass(configuration)
 				break;
 				case 	'differential':
 				case	'diff':
+					if(lastBackupDate > 2)
+						this.backupDatabase(databaseName, 'full');
 					if(databaseName == 'master')
 						return;
 					backupFile = this.FSO.BuildPath(backupFolder, formatDateTime(backupDate)+'--differential-['+databaseName+'].bak');
 					backupCommand = "backup database ["+databaseName+"] to disk = N'"+backupFile+"' with differential;";
 				break;
 				case	'log':
+					if(lastBackupDate > 2)
+						this.backupDatabase(databaseName, 'full');
 					if(databaseName == 'master')
+						return;
+					if(this.getRecoveryModel(databaseName)==3) // SIMPLE RECOVERY
 						return;
 					backupFile = this.FSO.BuildPath(backupFolder, formatDateTime(backupDate)+'--log-['+databaseName+'].trn');
 					backupCommand = "backup log ["+databaseName+"] to disk = N'"+backupFile+"';"
 				break;
 				default:
-					this.logMessage('Incorrect type of backup provided: '+backupType, 'information');
+					this.logMessage('Incorrect type of backup provided: '+backupType, this.messageType['information']);
 			}
 			try
 			{
-				this.logMessage(backupCommand, 'information');
+				this.logMessage(backupCommand, this.messageType['information']);
 				var rs = this.connADO.Execute(backupCommand);
 				while(rs)
 				{
 					var e = new Enumerator(this.connADO.Errors);
 					for( ; !e.atEnd(); e.moveNext())
-						this.logMessage('Msg '+e.item().NativeError+':\t '+ e.item().description, 'information');
+						this.logMessage('Msg '+e.item().NativeError+':\t '+ e.item().description, this.messageType['information']);
 					rs = rs.NextRecordset();
 				}
 			}
@@ -184,28 +226,28 @@ function BackupClass(configuration)
 			{
                 // oops, something goes wrong
 				this.fails++;
-				this.logMessage('Backup database "'+databaseName+'" failed:');
+				this.logMessage('Backup database "'+databaseName+'" failed:', this.messageType['error']);
 				this.errorsCount++;
 				if(rs)
 					while(rs)
 					{
 						var e = new Enumerator(this.connADO.Errors);
 						for( ;!e.atEnd(); e.moveNext())
-							this.logMessage('Msg '+e.item().NativeError+':\t '+ e.item().description);
+							this.logMessage('Msg '+e.item().NativeError+':\t '+ e.item().description, this.messageType['error']);
 						rs = rs.NextRecordset();
 					}
 				else
 				{
 					var e = new Enumerator(this.connADO.Errors);
 					for( ;!e.atEnd(); e.moveNext())
-						this.logMessage('Msg '+e.item().NativeError+':\t '+ e.item().description);                     
+						this.logMessage('Msg '+e.item().NativeError+':\t '+ e.item().description, this.messageType['error']);                     
 				}
 				return false; // failed to backup database
 			}
 		}
 		else
 		{
-			this.logMessage('database ['+databaseName+'] does not exists!', 'error');
+			this.logMessage('database ['+databaseName+'] does not exists!', this.messageType['error']);
 			this.fails++;
 			return false; // failed to backup database
 		}
@@ -223,16 +265,25 @@ function BackupClass(configuration)
 	this.compressFile = function(sourceFile, deleteSource)
 	{
 		var wSh=new ActiveXObject("WScript.Shell");
-		this.logMessage('Compress file:\t'+sourceFile);
+		this.logMessage('Compress file:\t'+sourceFile, this.messageType['information']);
 		var currentDirectory = wSh.CurrentDirectory;
 		wSh.CurrentDirectory=this.FSO.GetParentFolderName(sourceFile);
 		var archiveFile = this.FSO.GetBaseName(sourceFile)+this.configuration.compress.extension;
 		var CMD = this.configuration.compress.cmd.replace('$ARCHIVE', archiveFile).replace('$SOURCE', this.FSO.GetFileName(sourceFile));
-		var retCode=wSh.Run(CMD, 1, true);
-		if(deleteSource&&(retCode==0)&&FSO.FileExists(archiveFile))
+		var wshExec  = wSh.Exec(CMD);
+		while(wshExec.Status==0)
+			WScript.Sleep(1000);
+		var outText = wshExec.StdOut.ReadAll();
+		if(deleteSource&&(wshExec.ExitCode ==0)&&FSO.FileExists(archiveFile)&&(outText.indexOf('Everything is Ok') >-1 ))
+		{
+			this.logMessage(outText, this.messageType.information);
 			FSO.DeleteFile(sourceFile)
+		}
 		else
+		{
+			this.logMessage(outText, this.messageType.error);
 			return false;
+		}
 		wSh.CurrentDirectory = currentDirectory;
 		return this.FSO.BuildPath(this.FSO.GetParentFolderName(sourceFile), archiveFile);
 	}
@@ -245,14 +296,14 @@ function BackupClass(configuration)
 	{
 		var targetFolder = this.configuration.copyfile.targetFolder;
 		var targetFile = this.FSO.BuildPath(targetFolder, this.FSO.GetFileName(sourceFile));
-		this.logMessage('this.copyArchive: '+sourceFile+'\t'+targetFile);
+		this.logMessage('this.copyArchive: '+sourceFile+'\t'+targetFile, this.messageType['information']);
 		try
 		{
 			this.FSO.CopyFile(sourceFile, targetFile);
 		}
 		catch(err)
 		{
-			this.logMessage(err.description);
+			this.logMessage(err.description, this.messageType['error']);
 		}
 	}
 /*
@@ -262,10 +313,50 @@ function BackupClass(configuration)
 */
 	this.saveLog = function(folderPath)
 	{
-		var logFileName = this.FSO.BuildPath(folderPath, formatDateTime(new Date())+".log");
-		var logFile = this.FSO.CreateTextFile(logFileName, true);
-		logFile.Write(this.messages.join('\r\n'));
-		logFile.Close();
+		var logFileName = this.FSO.BuildPath(folderPath, formatDateTime(new Date())+".html");
+		var logHTML = new ActiveXObject("Msxml2.DOMDocument");
+		var html = logHTML.createElement('html');
+		logHTML.appendChild(html);
+		var body = logHTML.createElement('body');
+		html.appendChild(body);
+		var table = logHTML.createElement('table');
+		body.appendChild(table);
+		table.setAttribute('border', '1');
+		table.setAttribute('style', 'border-collapse:collapse');
+		var headerRow = logHTML.createElement('tr');
+		table.appendChild(headerRow);
+		var headerDate = logHTML.createElement('th');
+		headerRow.appendChild(headerDate);
+		headerDate.appendChild(logHTML.createTextNode('Date/Time'));
+		var headerMessage = logHTML.createElement('th');
+		headerRow.appendChild(headerMessage);
+		headerMessage.appendChild(logHTML.createTextNode('Message'));
+		for(var messageId = 0; messageId < this.messages.length; messageId++)
+		{
+			var dataRow = logHTML.createElement('tr');
+			table.appendChild(dataRow);
+			var dateTimeCell = logHTML.createElement('td');
+			dataRow.appendChild(dateTimeCell);
+			var datePre = logHTML.createElement('pre');
+			dateTimeCell.appendChild(datePre);
+			dateTimeCell.setAttribute('valign', 'top');
+			datePre.appendChild(logHTML.createTextNode(this.messages[messageId][0]));
+			
+			var messageCell = logHTML.createElement('td');
+			dataRow.appendChild(messageCell);
+			var messagePre = logHTML.createElement('pre');
+			messageCell.appendChild(messagePre);
+			
+			var messageSpan = logHTML.createElement('span');
+			messagePre.appendChild(messageSpan);
+			messageSpan.appendChild(logHTML.createTextNode(this.messages[messageId][1]));
+
+			if((this.messages[messageId][2])==this.messageType.error)
+			{
+				messageSpan.setAttribute('style', 'color:red');
+			}
+		}
+		logHTML.save(logFileName);
 	}
 }
 /********************************************************************************
@@ -283,5 +374,6 @@ var backupObject = new BackupClass(configuration);
 backupObject.proceedBackups('full');
 backupObject.proceedBackups('diff');
 backupObject.proceedBackups('log');
-backupObject.logMessage('Total fails found:'+backupObject.fails);
+if(backupObject.fails > 0 )
+	backupObject.logMessage('Total fails found:'+backupObject.fails, backupObject.messageType['error']);
 backupObject.saveLog(FSO.GetParentFolderName(WScript.ScriptFullName));
