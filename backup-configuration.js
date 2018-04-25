@@ -14,5 +14,10 @@
 	'copyfile':
 	{
 		'targetFolder': 'C:\\Users\\Vasya\\Documents\\Projects\\Scripts\\ShulginAvto\\Backup-Shulgin\\backup-folder\\TargetFolder'
-	}
+	},
+    'ftp':
+    {
+        'hostname': 'ftp://public:public@localhost'
+        
+    }
 })

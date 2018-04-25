@@ -14,6 +14,8 @@ function BackupClass(configuration)
 	this.connADO.ConnectionString = this.configuration.sql.connectionString;
 	this.connADO.CommandTimeout = 0;
 	this.connADO.Open();
+
+    this.logFolder = this.FSO.BuildPath(this.FSO.GetParentFolderName(WScript.ScriptFullName),'/Log');
 /*
 	function "Expand" add additional zeros to the "Value" till it's length become as "Length"
 	parameters:
@@ -107,7 +109,11 @@ function BackupClass(configuration)
 			var compressedBackup = this.compressFile(backupFile, true);
 			// 3. Send file to Disaster Recovery (DR) server
 			if(compressedBackup)
-				this.copyArchive(compressedBackup);
+                if(this.configuration.copyfile)
+                    this.copyArchive(compressedBackup);
+            if(compressedBackup)
+                if(this.configuration.ftp)
+                    this.uploadByFTP(compressedBackup);
 			// 4. Send Report
 			
 		}
@@ -157,7 +163,6 @@ function BackupClass(configuration)
 			from    [msdb].[dbo].[backupset]\n\
 			where   [database_name] = @DatabaseName and [type] = @BackupType;',\n\
 			@params = N'@DatabaseName sysname, @BackupType nchar(1)', @databaseName = N'"+databaseName+"', @backupType = N'"+backupType+"'";
-		WScript.Echo(query);
 		var rs = this.connADO.Execute(query);
 		return parseInt(rs('days_past'));
 	}		
@@ -181,7 +186,6 @@ function BackupClass(configuration)
 			}
 			this.logMessage('Backup database ['+databaseName+"] type="+backupType, this.messageType['information']);
 			var lastBackupDate = this.lastBackupDate(databaseName, 'D');
-			WScript.Echo(databaseName + '\t' + lastBackupDate);
 			switch(backupType.toLowerCase())
 			{
 				case 	'full':
@@ -306,14 +310,52 @@ function BackupClass(configuration)
 			this.logMessage(err.description, this.messageType['error']);
 		}
 	}
+    this.uploadByFTP = function(sourceFile)
+    {
+        var wSh = new ActiveXObject('WScript.Shell');
+        var workTime = formatDateTime(new Date());
+        var winSCP = this.FSO.BuildPath(this.FSO.GetParentFolderName(WScript.ScriptFullName),'/WinSCP/WinSCP.exe');
+        var scriptFileName = this.FSO.BuildPath(this.logFolder, '/upload--'+workTime+'.wscp');
+        var logFileName = this.FSO.BuildPath(this.logFolder, '/upload--'+workTime);
+        this.createFolder(this.logFolder);
+        var scriptFile = new ActiveXObject('ADODB.Stream');
+        scriptFile.Type = 2;
+        scriptFile.Charset = 'UTF-8';
+        scriptFile.Open();
+        var hostName = 'open '+this.configuration.ftp.hostname;
+        /*
+        if(this.configuration.certificate)
+            hostName += ' -certificate="25:b8:ae:19:b4:34:4d:8f:1c:71:65:69:5e:80:20:7b:f0:c0:0e:ca"';
+        */
+        scriptFile.WriteText(hostName+'\n');
+        scriptFile.WriteText('put '+sourceFile+'\n');
+        scriptFile.WriteText('exit');
+        scriptFile.SaveToFile(scriptFileName, 2);
+        scriptFile.Close();
+        var CMD = winSCP + ' /console /script='+scriptFileName+' /log='+logFileName+'.log /xmllog='+logFileName+'.xml';
+        this.logMessage('Send file '+sourceFile+' to by FTP', this.messageType['information']);
+        var wshExec = wSh.Exec(CMD);
+        while(wshExec.Status == 0)
+            WScript.Sleep(1000);
+        if(wshExec.ExitCode != 0)
+        {
+            this.logMessage('Send file failed. Check details in the file '+logFileName+', Exit Code='+wshExec.ExitCode, this.messageType['error']);
+        }
+        else
+        {
+            this.logMessage('File '+sourceFile+' successful sent', this.messageType['information']);
+        }
+        this.FSO.DeleteFile(scriptFileName);
+    }
 /*
 	function "saveLog" for save log messages collected to file on disk
 	parameters:
 		folderPath: - folder to store log
 */
-	this.saveLog = function(folderPath)
+	this.saveLog = function()
 	{
-		var logFileName = this.FSO.BuildPath(folderPath, formatDateTime(new Date())+".html");
+		var logFileName = this.FSO.BuildPath(this.logFolder, formatDateTime(new Date())+".html");
+        this.createFolder(this.logFolder);
 		var logHTML = new ActiveXObject("Msxml2.DOMDocument");
 		var html = logHTML.createElement('html');
 		logHTML.appendChild(html);
@@ -356,6 +398,7 @@ function BackupClass(configuration)
 				messageSpan.setAttribute('style', 'color:red');
 			}
 		}
+        this.createFolder(this.logFolder);
 		logHTML.save(logFileName);
 	}
 }
@@ -376,4 +419,4 @@ backupObject.proceedBackups('diff');
 backupObject.proceedBackups('log');
 if(backupObject.fails > 0 )
 	backupObject.logMessage('Total fails found:'+backupObject.fails, backupObject.messageType['error']);
-backupObject.saveLog(FSO.GetParentFolderName(WScript.ScriptFullName));
+backupObject.saveLog();
