@@ -320,18 +320,47 @@ function BackupServer(backupType)
 */
     function copyArchive(sourceFile)
     {
+        var sourceFolder = FSO.GetParentFolderName(sourceFile);
         var targetFolder = FSO.BuildPath(configuration.copyfile.targetFolder, backupDateFolder);
+        
+        logMessage('copyArchive from: '+sourceFolder+' to :'+targetFolder, messageType['information']);
+        
         createFolder(targetFolder);
-        var targetFile = FSO.BuildPath(targetFolder, FSO.GetFileName(sourceFile));
-        logMessage('copyArchive: '+sourceFile+'\t'+targetFile, messageType['information']);
-        try
+        
+        var sourceFiles = listFiles(sourceFolder), targetFiles = listFiles(targetFolder);
+        for(var fileIndex = 0; fileIndex < sourceFiles.length; fileIndex++)
+            if(!indexOf(sourceFiles[fileIndex], targetFiles))
+            {
+                var sourceFile = FSO.BuildPath(sourceFolder, sourceFiles[fileIndex]);
+                var targetFile = FSO.BuildPath(targetFolder, sourceFiles[fileIndex]);
+                try
+                {
+                    WScript.Echo('CopyFile from ' + sourceFile + ' to ' + targetFile);
+                    FSO.CopyFile(sourceFile, targetFile);
+                }
+                catch(err)
+                {
+                    logMessage(err.description, messageType.error);
+                    sendTelegramMessage(wshNetwork.ComputerName + ':: Failed to copy archive to ' + targetFile);
+                }
+            }
+        return;
+
+        function listFiles(folderPath)
         {
-            FSO.CopyFile(sourceFile, targetFile);
+            var filesList = new Array();
+            for(var e = new Enumerator(FSO.GetFolder(folderPath).Files); !e.atEnd(); e.moveNext())
+                filesList.push(e.item().Name);
+            filesList.sort();
+            return filesList;
         }
-        catch(err)
+
+        function indexOf(arrayElement, array)
         {
-            logMessage(err.description, messageType.error);
-            sendTelegramMessage(wshNetwork.ComputerName + ':: Failed to copy archive to ' + targetFile);
+            for(var i = 0; i < array.length; i++)
+                if(arrayElement == array[i])
+                    return true;
+            return false;
         }
     }
 
