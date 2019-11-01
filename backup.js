@@ -323,7 +323,7 @@ function BackupServer(backupType)
         var sourceFolder = FSO.GetParentFolderName(sourceFile);
         var targetFolder = FSO.BuildPath(configuration.copyfile.targetFolder, backupDateFolder);
         
-        logMessage('copyArchive from: '+sourceFolder+' to :'+targetFolder, messageType['information']);
+        logMessage('copyArchive from: '+sourceFolder+' to: '+targetFolder, messageType['information']);
         
         createFolder(targetFolder);
         
@@ -335,7 +335,7 @@ function BackupServer(backupType)
                 var targetFile = FSO.BuildPath(targetFolder, sourceFiles[fileIndex]);
                 try
                 {
-                    WScript.Echo('CopyFile from ' + sourceFile + ' to ' + targetFile);
+                    WScript.Echo('CopyFile from: ' + sourceFile + ' to: ' + targetFile);
                     FSO.CopyFile(sourceFile, targetFile);
                 }
                 catch(err)
